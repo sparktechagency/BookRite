@@ -19,17 +19,17 @@ const userList = catchAsync(async(req: Request, res: Response)=>{
 })
 
 
-const createSuperAdmin = catchAsync(async(req: Request, res: Response)=>{
+// const createSuperAdmin = catchAsync(async(req: Request, res: Response)=>{
 
-    const result = await AdminService.createSuperAdminToDB(req.body);
+//     const result = await AdminService.createSuperAdminToDB(req.body);
 
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Super Admin Created Successfully",
-        data: result
-    })
-})
+//     sendResponse(res, {
+//         statusCode: StatusCodes.OK,
+//         success: true,
+//         message: "Super Admin Created Successfully",
+//         data: result
+//     })
+// })
 
 const bookingList = catchAsync(async(req: Request, res: Response)=>{
     const payload = {...req.query};
@@ -136,7 +136,7 @@ export const AdminController = {
     userList,
     bookingList,
     transactionList,
-    createSuperAdmin,
+    // createSuperAdmin,
     bookingSummary,
     userStatistic,
     earningStatistic,

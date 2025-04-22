@@ -1,7 +1,7 @@
 import { Model } from 'mongoose';
 
 export type IService = {
-  name: string;
+  CategoryName: string;
   image: string;
 }
 

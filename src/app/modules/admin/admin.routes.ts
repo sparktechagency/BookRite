@@ -6,7 +6,7 @@ import validateRequest from "../../middlewares/validateRequest";
 import { AdminValidation } from "./admin.validation";
 const router = express.Router();
 
-router.post("/create-super-admin", validateRequest(AdminValidation.createAdminZodSchema), AdminController.createSuperAdmin);
+// router.post("/create-super-admin", validateRequest(AdminValidation.createAdminZodSchema), AdminController.createSuperAdmin);
 router.post("/create-admin", auth(USER_ROLES.SUPER_ADMIN), validateRequest(AdminValidation.createAdminZodSchema), AdminController.createAdmin);
 router.get("/users", auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), AdminController.userList);
 router.get("/bookings", auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), AdminController.bookingList);

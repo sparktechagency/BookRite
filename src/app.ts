@@ -20,6 +20,15 @@ app.use(express.static('uploads'));
 
 //router
 app.use('/api/v1', router);
+// Increase timeout to 30 seconds
+app.use((req, res, next) => {
+  res.setTimeout(30000, () => {  // 30 seconds timeout
+      console.log('Request has timed out.');
+      res.sendStatus(408);  // HTTP 408 Request Timeout
+  });
+  next();
+});
+
 
 //live response
 app.get('/', (req: Request, res: Response) => {

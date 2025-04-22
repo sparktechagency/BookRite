@@ -6,6 +6,7 @@ import { IUser } from "../user/user.interface"
 import { User } from "../user/user.model"
 import { IOffer } from "../offer/offer.interface";
 import { Offer } from "../offer/offer.model";
+import bcrypt from 'bcrypt';
 
 const createSuperAdminToDB = async (payload: any): Promise<IUser> =>{
 
@@ -212,7 +213,7 @@ const bookingSummaryFromDB = async (): Promise<IBooking | {}> => {
         {
             $project: {
                 totalIncome: 1 || 0,
-                totalRevenue: { $subtract: ["$totalIncome", { $multiply: ["$totalIncome", 0.9] }] } || 0  // Subtract 90%
+                totalRevenue: { $subtract: ["$totalIncome", { $multiply: ["$totalIncome", 0.9] }] }  // Subtract 90%
             }
         }
     ]);
@@ -322,16 +323,35 @@ const userStatisticFromDB = async (): Promise<IUser[]> => {
 };
 
 
-const createAdminToDB = async (payload:IUser): Promise<IUser> => {
-    const createAdmin:any = await User.create(payload);
+const createAdminToDB = async (payload: IUser): Promise<IUser> => {
+    if (payload.password) {
+        const salt = await bcrypt.genSalt(10);
+        payload.passwordHash = await bcrypt.hash(payload.password, salt);
+        
+        delete payload.password;
+    } else {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is required');
+    }
+    
+    const createAdmin: any = await User.create(payload);
+    
     if (!createAdmin) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Admin');
     }
-    if(createAdmin){
-        await User.findByIdAndUpdate({_id: createAdmin?._id}, {verified: true}, {new: true});
+    
+    if (createAdmin) {
+        await User.findByIdAndUpdate(
+            { _id: createAdmin?._id }, 
+            { isVerified: true }, 
+            { new: true }
+        );
     }
+    
     return createAdmin;
 }
+
+
+
 
 const deleteAdminFromDB = async (id:any): Promise<IUser | undefined> => {
 

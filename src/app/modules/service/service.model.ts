@@ -3,15 +3,17 @@ import { IService, ServiceModel } from './service.interface'
 
 const serviceSchema = new Schema<IService, ServiceModel>(
   {
-    name: {
+    CategoryName: {
       type: String,
       required: true,
       unique: true,
     },
-    image: {
+
+      image: {
       type: String,
       required: true
     },
+  
   },
   { timestamps: true },
 )

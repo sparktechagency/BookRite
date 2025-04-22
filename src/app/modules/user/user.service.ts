@@ -8,6 +8,7 @@ import unlinkFile from '../../../shared/unlinkFile';
 import generateOTP from '../../../util/generateOTP';
 import { IUser } from './user.interface';
 import { User } from './user.model';
+import bcrypt from 'bcrypt';
 import cron from 'node-cron';
 
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
@@ -52,6 +53,9 @@ const createAdminToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   }
   return createAdmin;
 };
+
+
+
 
 const getUserProfileFromDB = async (
   user: JwtPayload

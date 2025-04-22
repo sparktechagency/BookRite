@@ -8,8 +8,8 @@ import { IPost } from '../post/post.interface'
 import { Bookmark } from '../bookmark/bookmark.model'
 
 const createServiceToDB = async (payload: IService) => {
-  const { name, image } = payload;
-  const isExistName = await Service.findOne({ name: name })
+  const { CategoryName, image } = payload;
+  const isExistName = await Service.findOne({ CategoryName: CategoryName })
 
   if (isExistName) {
     unlinkFile(image);

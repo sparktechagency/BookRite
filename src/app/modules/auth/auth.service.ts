@@ -44,7 +44,7 @@ const loginUserFromDB = async (payload: ILoginData) => {
   //check match password
   if (
     password &&
-    !(await User.isMatchPassword(password, isExistUser.password))
+    !User.isMatchPassword(password, isExistUser.password)
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
   }
@@ -170,7 +170,7 @@ const resetPasswordToDB = async (
   }
 
   //validity check
-  const isValid = await ResetToken.isExpireToken(token);
+  const isValid = ResetToken.isExpireToken(token);
   if (!isValid) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -216,7 +216,7 @@ const changePasswordToDB = async (
   //current password match
   if (
     currentPassword &&
-    !(await User.isMatchPassword(currentPassword, isExistUser.password))
+    isExistUser.password && !User.isMatchPassword(currentPassword, isExistUser.password)
   ) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect');
   }

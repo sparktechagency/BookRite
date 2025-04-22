@@ -12,12 +12,14 @@ import { PaymentRoutes } from '../app/modules/payment/payment.routes';
 import { OfferRouter } from '../app/modules/offer/offer.routes';
 import { NotificationRoutes } from '../app/modules/notification/notification.routes';
 import { BookmarkRoutes } from '../app/modules/bookmark/bookmark.routes';
+import { WcServiceRoutes } from '../app/modules/service/servicewc.Routes';
 const router = express.Router();
 
 const apiRoutes = [
   { path: '/user', route: UserRoutes },
   { path: '/auth', route: AuthRoutes },
   { path: '/service', route: ServiceRoutes },
+  { path: '/wcservice', route: WcServiceRoutes },
   { path: '/rule', route: RuleRoutes },
   { path: '/post', route: PostRoutes },
   { path: '/chat', route: ChatRoutes },

@@ -2,13 +2,15 @@ import { Model, Types } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
 export type IUser = {
+  passwordHash: string;
+  
   name: string;
   appId: string;
   role: USER_ROLES;
   contact: string;
   dateOfBirth: string;
   email: string;
-  password: string;
+  password?: string;
   location: string;
   profile?: string;
   post?: Types.ObjectId,
