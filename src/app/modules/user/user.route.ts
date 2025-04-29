@@ -18,6 +18,11 @@ router.post(
   validateRequest(UserValidation.createAdminZodSchema),
   UserController.createAdmin
 );
+router.post(
+  '/create-super-admin',
+  validateRequest(UserValidation.createAdminZodSchema),
+  UserController.createSuperAdmin
+);
 
 router
   .route('/')

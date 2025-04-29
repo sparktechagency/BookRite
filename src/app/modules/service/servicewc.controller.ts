@@ -4,6 +4,7 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { ServiceWcServices } from './servicewc.service';
 import ApiError from '../../../errors/ApiError';
+import { Review } from '../review/review.model';
 
 const createServiceWc = catchAsync(async (req: Request, res: Response) => {
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -18,7 +19,11 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
       serviceName: req.body.serviceName,
       serviceDescription: req.body.serviceDescription,
       category: req.body.category,
-      image: imagePath
+      price: req.body.price,
+      Review: req.body.Review,
+      reviews: req.body.reviews || [],
+      image: imagePath,
+      User: req.body.User,
     };
     
     const result = await ServiceWcServices.createServiceToDB(data);
@@ -30,6 +35,21 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
       data: result,
     });
   });
+
+  //user can rating this work
+  const userRating = catchAsync(async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const reviews = req.body.reviews;
+  
+    const result = await ServiceWcServices.userRatingToDB(id, reviews as any);
+  
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: 'Rating updated successfully',
+      data: result,
+    });
+  })
   
 
 // const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
@@ -44,15 +64,18 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
 // });
 
 const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
-    const result = await ServiceWcServices.getServicesFromDB();
-  
-    sendResponse(res, {
-      success: true,
-      statusCode: StatusCodes.OK,
-      message: 'Services retrieved successfully',
-      data: result,
-    });
+  const result = await ServiceWcServices.getServicesFromDB(req);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Services retrieved successfully',
+    data: result,
   });
+});
+
+
+
 const updateServiceWc = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
   const updateData = req.body;
@@ -93,4 +116,5 @@ export const ServiceWcController = {
   getServiceWcs,
   updateServiceWc,
   deleteServiceWc,
+  userRating,
 };

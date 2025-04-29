@@ -40,6 +40,9 @@ const updateServiceToDB = async (id: string, payload: IService) => {
   if (payload.image) {
     unlinkFile(isExistService?.image);
   }
+  if (payload.User) {
+    unlinkFile(isExistService?.User);
+  }
 
   const updateService = await Service.findOneAndUpdate({ _id: id }, payload, {
     new: true,

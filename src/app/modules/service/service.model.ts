@@ -13,6 +13,11 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       type: String,
       required: true
     },
+    User: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: false,
+    },
   
   },
   { timestamps: true },

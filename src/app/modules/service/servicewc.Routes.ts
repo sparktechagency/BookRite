@@ -33,5 +33,8 @@ router.get(
   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
   ServiceWcController.getServiceWcs,
 );
+// router.post("/rating", 
+//   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER), 
+//   ServiceWcController.userRating);
 
 export const WcServiceRoutes = router;

@@ -5,7 +5,7 @@ const reviewSchema = new Schema<IReview, ReviewModel>(
     {
         service: {
             type: Schema.Types.ObjectId,
-            ref: "Post",
+            ref: "Servicewc",
             required: true,
         },
         user: {

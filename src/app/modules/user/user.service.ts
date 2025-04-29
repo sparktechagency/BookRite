@@ -54,8 +54,38 @@ const createAdminToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   return createAdmin;
 };
 
+//create super admin
+const createSuperAdminToDB = async (payload: Partial<IUser>): Promise<IUser> => {
+  
+  //set role
+  payload.role = USER_ROLES.SUPER_ADMIN;
+  const createUser = await User.create(payload);
+  if (!createUser) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
+  }
 
+  //send email
+  const otp = generateOTP();
+  const values = {
+    name: createUser.name,
+    otp: otp,
+    email: createUser.email!,
+  };
+  const createAccountTemplate = emailTemplate.createAccount(values);
+  emailHelper.sendEmail(createAccountTemplate);
 
+  //save to DB
+  const authentication = {
+    oneTimeCode: otp,
+    expireAt: new Date(Date.now() + 3 * 60000),
+  };
+  await User.findOneAndUpdate(
+    { _id: createUser._id },
+    { $set: { authentication } }
+  );
+
+  return createUser;
+};
 
 const getUserProfileFromDB = async (
   user: JwtPayload
@@ -81,7 +111,9 @@ const updateProfileToDB = async (
 
   //unlink file here
   if (payload.profile) {
-    unlinkFile(isExistUser.profile);
+    if (isExistUser.profile) {
+      unlinkFile(isExistUser.profile);
+    }
   }
 
   const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {
@@ -95,5 +127,6 @@ export const UserService = {
   createUserToDB,
   getUserProfileFromDB,
   updateProfileToDB,
-  createAdminToDB
+  createAdminToDB,
+  createSuperAdminToDB
 };

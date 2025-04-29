@@ -47,12 +47,31 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
       type: String,
       required: true
     },
+    price: {
+      type: Number,
+      required: false
+    },
     category: {
       type: Schema.Types.ObjectId, 
       required: true,
       ref: 'Service'
     },
+
+    User: {
+      type: Schema.Types.ObjectId,
+      required: false,
+      ref: 'User'
+    },
+    reviews: {
+      type: [{
+        user: { type: Schema.Types.ObjectId, ref: 'User' },
+        comment: { type: String, required: false },
+        rating: { type: Number, required: false },
+        createdAt: { type: Date, default: Date.now }
+      }],
+      default: []
+    }
   },
-  { timestamps: true },
+  { timestamps: true }
 )
-export const Service = model<IWcService, ServiceWcModel>('Servicewc', servicewcSchema)
+export const Servicewc = model<IWcService, ServiceWcModel>('Servicewc', servicewcSchema)

@@ -5,6 +5,7 @@ export const ServiceWcValidation = {
     body: z.object({
       serviceName: z.string().min(1, { message: "Service name is required" }),
       serviceDescription: z.string().min(1, { message: "Service description is required" }),
+      price: z.string().min(1, { message: "Price is required" }),
       category: z.string().min(1, { message: "Category is required" }),
     }),
   }),

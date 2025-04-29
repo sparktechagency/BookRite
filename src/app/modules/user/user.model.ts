@@ -128,10 +128,12 @@ userSchema.pre('save', async function (next) {
   }
 
   //password hash
-  this.password = await bcrypt.hash(
-    this.password,
-    Number(config.bcrypt_salt_rounds)
-  );
+  if (this.password) {
+    this.password = await bcrypt.hash(
+      this.password,
+      Number(config.bcrypt_salt_rounds)
+    );
+  }
   next();
 });
 
