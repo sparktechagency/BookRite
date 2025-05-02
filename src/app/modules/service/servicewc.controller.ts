@@ -36,20 +36,7 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
     });
   });
 
-  //user can rating this work
-  const userRating = catchAsync(async (req: Request, res: Response) => {
-    const id = req.params.id;
-    const reviews = req.body.reviews;
-  
-    const result = await ServiceWcServices.userRatingToDB(id, reviews as any);
-  
-    sendResponse(res, {
-      success: true,
-      statusCode: StatusCodes.OK,
-      message: 'Rating updated successfully',
-      data: result,
-    });
-  })
+
   
 
 // const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
@@ -115,6 +102,5 @@ export const ServiceWcController = {
   createServiceWc,
   getServiceWcs,
   updateServiceWc,
-  deleteServiceWc,
-  userRating,
+  deleteServiceWc
 };

@@ -31,28 +31,20 @@ const createServiceToDB = async (payload: IWcService) => {
 // };
 
 //user rating
-const userRatingToDB = async (id: string, payload: IWcService) => {
-  const result = await Servicewc.findByIdAndUpdate(id, payload, { new: true });
 
-  if (!result) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to update rating");
-  }
-
-  return result;
-}
-async function findById(id: string) {
-  return await Review.findById(id).populate('reviews.user', 'name -_id');
-}
 
 const getServicesFromDB = async (req: any) => {
   const { filter, search } = req.query;
   let query = Servicewc.find().populate({
     path: 'category',
-    select: 'categoryName image -_id User',
+    select: 'CategoryName price image -_id User',
     populate: {
       path: 'User',
       select: 'name -_id',
     },
+  }).populate({
+    path: 'User',
+    select: 'name -_id',
   });
 
   
@@ -113,6 +105,5 @@ export const ServiceWcServices = {
   getServicesFromDB,
   updateServiceToDB,
   deleteServiceToDB,
-  userRatingToDB,
-  findById,
+  
 };

@@ -7,6 +7,7 @@ import { User } from "../user/user.model"
 import { IOffer } from "../offer/offer.interface";
 import { Offer } from "../offer/offer.model";
 import bcrypt from 'bcrypt';
+import { USER_ROLES } from "../../../enums/user";
 
 const createSuperAdminToDB = async (payload: any): Promise<IUser> =>{
 
@@ -326,7 +327,7 @@ const userStatisticFromDB = async (): Promise<IUser[]> => {
 const createAdminToDB = async (payload: IUser): Promise<IUser> => {
     if (payload.password) {
         const salt = await bcrypt.genSalt(10);
-        payload.passwordHash = await bcrypt.hash(payload.password, salt);
+        payload.password = await bcrypt.hash(payload.password, salt);
         
         delete payload.password;
     } else {
@@ -369,6 +370,22 @@ const getAdminFromDB = async (): Promise<IUser[]> => {
     return admins;
 }
 
+const getBookingsFromDB = async () => {
+    try {
+      const bookings = await Booking.find()
+        .populate({
+          path: 'serviceProviderId',
+          select: 'name email role', 
+          match: { role: USER_ROLES.ADMIN }, 
+        })
+        .populate('serviceId');
+  
+      return bookings;
+    } catch (error) {
+      throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Error fetching bookings from database');
+    }
+  };
+
 export const AdminService = {
     usersFromDB,
     bookingFromDB,
@@ -379,5 +396,6 @@ export const AdminService = {
     userStatisticFromDB,
     createAdminToDB,
     deleteAdminFromDB,
-    getAdminFromDB
+    getAdminFromDB,
+    getBookingsFromDB,
 }

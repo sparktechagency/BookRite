@@ -3,6 +3,10 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { AdminService } from './admin.service';
+import { Booking } from '../booking/booking.model';
+import ApiError from '../../../errors/ApiError';
+import { USER_ROLES } from '../../../enums/user';
+import { BookingController } from '../booking/booking.controller';
 
 const userList = catchAsync(async(req: Request, res: Response)=>{
     const {page, limit, search} = req.query;
@@ -132,6 +136,67 @@ const getAdmin = catchAsync(async(req: Request, res: Response)=>{
     })
 })
 
+const getBookings = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const bookings = await AdminService.getBookingsFromDB();
+  
+      if (!bookings || bookings.length === 0) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'No bookings found');
+      }
+  
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'Bookings fetched successfully',
+        data: bookings,
+      });
+    } catch (error) {
+      console.error(error);
+      const err = error as ApiError;
+      res.status(err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: err.message || 'Error fetching bookings',
+      });
+    }
+  };
+  const acceptBooking = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userRole = req.user.role; 
+      if (userRole !== USER_ROLES.ADMIN) {
+        throw new ApiError(StatusCodes.FORBIDDEN, 'Only an admin can accept bookings');
+      }
+  
+      const { bookingId } = req.params;
+  
+      const booking = await BookingController.getBookingById(bookingId);
+  
+      if (!booking) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
+      }
+  
+      booking.status = 'Accepted';
+  
+      if (booking.paymentStatus === 'Paid') {
+        booking.status = 'Completed';
+      }
+      
+
+      await booking.save(); 
+  
+      res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'Booking status updated to completed successfully',
+        data: booking,
+      });
+    } catch (error) {
+      const err = error as ApiError;
+      console.error(error);
+      res.status(err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: err.message || 'Error updating booking status',
+      });
+    }
+  };
+
 export const AdminController = {
     userList,
     bookingList,
@@ -142,5 +207,7 @@ export const AdminController = {
     earningStatistic,
     deleteAdmin,
     createAdmin,
-    getAdmin
+    getAdmin,
+    getBookings,
+    acceptBooking,
 }

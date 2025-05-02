@@ -4,19 +4,20 @@ import { StatusCodes } from 'http-status-codes';
 import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import router from './routes';
 import { Morgan } from './shared/morgen';
+import path from 'path';
+import { stripeWebhookHandler } from './app/modules/payment/payment.controller';
 const app = express();
 
-//morgan
+app.post('/webhook', express.raw({ type: 'application/json' }), stripeWebhookHandler);
+app.use(express.json());
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
-
 //body parser
 app.use(cors());
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //file retrieve
-app.use(express.static('uploads'));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 //router
 app.use('/api/v1', router);

@@ -1,42 +1,51 @@
-import config from "../../../config";
-import { MercadoPagoConfig, Preference } from 'mercadopago';
+import Stripe from 'stripe';
+import { Booking } from '../booking/booking.model'; // Assuming the Booking model is in this path
+import ApiError from '../../../errors/ApiError'; // Custom error handling
+import { StatusCodes } from 'http-status-codes';
+import config from '../../../config';
+import { Servicewc } from '../service/serviceswc.model';
 
-const client = new MercadoPagoConfig({
-    accessToken: config.mercado_secret as string,
-    options: { timeout: 5000 }
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || " ", {
+    apiVersion: "2024-06-20", 
+    
+  });export const createPaymentSession = async (bookingId: string) => {
+    const booking = await Booking.findById(bookingId).populate('serviceId');
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
 
-const preference = new Preference(client);
-
-// create payment intent;
-const createPaymentIntentToMercado = async (payload: any) => {
-    const { price } = payload;
-
-    const paymentData = {
-        items: [
-            {
-                id: "1234",
-                title: "Product",
-                quantity: 1,
-                unit_price: price
-            }
-        ],
-        payer: {
-            email: "nadirhossain336@gmail.com", // Optional but recommended
+  
+    const service = booking.serviceId as any; // populated, so it has full object
+  
+    if (typeof service.price !== 'number' || isNaN(service.price)) {
+        throw new Error('Service price is invalid or missing');
+      }
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: service.serviceName,
+              description: service.serviceDescription,
+            },
+            unit_amount: Math.round(service.price * 100), // amount in cents
+          },
+          quantity: 1,
         },
-        back_urls: {
-            success: 'http://www.your-site.com/success', // Optional but recommended
-            failure: 'http://www.your-site.com/failure', // Optional
-            pending: 'http://www.your-site.com/pending', // Optional
-        },
-        auto_return: 'approved', // Optional
-    };
-
-    const response = await preference.create({ body: paymentData });
-    return response?.init_point;
-}
-
-
-export const PaymentService = {
-    createPaymentIntentToMercado
-}
+      ],
+      success_url: `${process.env.CLIENT_URL}/booking-success?bookingId=${booking._id}`,
+      cancel_url: `${process.env.CLIENT_URL}/booking-cancel?bookingId=${booking._id}`,
+      metadata: {
+        bookingId: booking._id.toString(),
+      },
+    });
+  
+    // Update booking with session ID
+    booking.paymentSessionId = session.id;
+    await booking.save();
+  
+    return session.url;
+  };

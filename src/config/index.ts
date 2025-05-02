@@ -24,5 +24,10 @@ export default {
   admin: {
     email: process.env.ADMIN_EMAIL,
     password: process.env.ADMIN_PASSWORD
-  }
+  },
+  stripe: {
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  },
+  clientUrl: process.env.CLIENT_URL,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
 };
