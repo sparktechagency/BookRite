@@ -39,6 +39,7 @@ import { Model, Types } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
 export type IUser = {
+  save(): unknown;
   name: string;
   appId: string;
   role: USER_ROLES;
@@ -55,12 +56,18 @@ export type IUser = {
     oneTimeCode: number;
     expireAt: Date;
   };
+  subscription?: {
+    status: boolean;
+    stripeSubscriptionId: string;
+    externalSubscriptionId: string;
+  };
   accountInformation?: {
     status: boolean;
     stripeAccountId: string;
     externalAccountId: string;
     currency: string;
   };
+  stripeCustomerId?: string;
 };
 
 export type UserModal = {

@@ -10,7 +10,7 @@ const bookmarkSchema = new Schema<IBookmark, BookmarkModel>(
         },
         service: {
             type: Schema.Types.ObjectId,
-            ref: "Post",
+            ref: "Servicewc",
             required: true
         }
     }, 

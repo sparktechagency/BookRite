@@ -31,7 +31,7 @@ export const initiatePayment = async (req: Request, res: Response): Promise<void
     
       export const stripeWebhookHandler = async (req: Request, res: Response): Promise<void> =>{
         const sig = req.headers['stripe-signature'] as string;
-        const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+        const endpointSecret = config.stripe.webhookSecret;
       
         let event: Stripe.Event;
       
@@ -61,6 +61,8 @@ export const initiatePayment = async (req: Request, res: Response): Promise<void
         //     console.error('❌ Error updating booking status:', error);
         //   }
         // }
+
+        
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object as Stripe.Checkout.Session;
           

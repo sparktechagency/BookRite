@@ -21,10 +21,16 @@ const userSchema = new Schema<IUser, UserModal>(
       enum: Object.values(USER_ROLES),
       required: true,
     },
+    // email: {
+    //   type: String,
+    //   required: false,
+    //   unique: true,
+    //   lowercase: true,
+    // },
     email: {
       type: String,
-      required: false,
-      unique: true,
+      required: true,
+      unique: true, 
       lowercase: true,
     },
     contact: {
@@ -58,6 +64,18 @@ const userSchema = new Schema<IUser, UserModal>(
       ref: "Post",
       select: 0
     },
+    subscription: {
+      type: {
+        status: {
+          type: Boolean,
+          default: false,
+        },
+        stripeSubscriptionId: {
+          type: String,
+        },
+      },
+      select: 0,
+    },
     authentication: {
       type: {
         isResetPassword: {
@@ -89,8 +107,12 @@ const userSchema = new Schema<IUser, UserModal>(
       currency: {
         type: String,
       }
-    }
+    },
+    stripeCustomerId: {
+      type: String,
+    },
   },
+
   { timestamps: true }
 );
 

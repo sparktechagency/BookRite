@@ -15,6 +15,9 @@ import { BookmarkRoutes } from '../app/modules/bookmark/bookmark.routes';
 import { WcServiceRoutes } from '../app/modules/service/servicewc.Routes';
 import { BookingRoutes } from '../app/modules/booking/booking.route';
 import { AdminRoutes } from '../app/modules/admin/admin.routes';
+import { SubscriptionRoutes } from '../app/modules/subscription/subscription.routes';
+import { PackageRoutes } from '../app/modules/package/package.routes';
+
 const router = express.Router();
 
 const apiRoutes = [
@@ -29,6 +32,8 @@ const apiRoutes = [
   { path: '/review', route: ReviewRoutes },
   { path: '/banner', route: BannerRoutes },
   { path: '/payment', route: paymentRoute },
+  { path: '/subscription', route: SubscriptionRoutes},
+  { path: '/package', route: PackageRoutes},
   { path: '/offer', route: OfferRouter },
   { path: '/notification', route: NotificationRoutes },
   { path: '/bookmark', route: BookmarkRoutes },

@@ -42,6 +42,22 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
 
   return createUser;
 };
+//getUserById
+export const getUserById = async (id: string): Promise<IUser | null> => {
+  console.log("Fetching user by ID:", id);  
+
+  try {
+    const user = await User.findById(id);
+    if (!user) {
+      console.error(`User with ID ${id} not found`);
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'User not found');
+    }
+    return user;
+  } catch (error) {
+    console.error("Error fetching user by ID:", error);  
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Error fetching user');
+  }
+};
 
 const createAdminToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   const createAdmin = await User.create(payload);
@@ -123,8 +139,10 @@ const updateProfileToDB = async (
   return updateDoc;
 };
 
-export const UserService = {
+
+ export const UserService = {
   createUserToDB,
+  getUserById,
   getUserProfileFromDB,
   updateProfileToDB,
   createAdminToDB,

@@ -8,7 +8,7 @@ export default {
   node_env: process.env.NODE_ENV,
   port: process.env.PORT,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
-  stripe_api_secret: process.env.STRIPE_SECRET_KEY,
+
   mercado_secret: process.env.MERCADO_SECRET_KEY,
   jwt: {
     jwt_secret: process.env.JWT_SECRET,
@@ -27,7 +27,10 @@ export default {
   },
   stripe: {
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    paymentSuccess: process.env.PAYMENT_SUCCESS,
+    stripe_api_secret: process.env.STRIPE_API_KEY,
+    clientUrl: process.env.CLIENT_URL,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
   },
-  clientUrl: process.env.CLIENT_URL,
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+
 };

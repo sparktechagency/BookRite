@@ -7,7 +7,9 @@ import { Morgan } from './shared/morgen';
 import path from 'path';
 import { stripeWebhookHandler } from './app/modules/payment/payment.controller';
 const app = express();
-
+app.get('/', (req, res) => {
+  res.send('Server is running');
+});
 app.post('/webhook', express.raw({ type: 'application/json' }), stripeWebhookHandler);
 app.use(express.json());
 app.use(Morgan.successHandler);
