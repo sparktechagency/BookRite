@@ -6,7 +6,7 @@ import config from '../../../config';
 import { Servicewc } from '../service/serviceswc.model';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || " ", {
-    apiVersion: "2024-06-20", 
+    apiVersion: "2025-04-30.basil", 
     
   });export const createPaymentSession = async (bookingId: string) => {
     const booking = await Booking.findById(bookingId).populate('serviceId');

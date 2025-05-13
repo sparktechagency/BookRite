@@ -26,6 +26,7 @@ const createPackageToDB = async(payload: IPackage): Promise<IPackage | null>=>{
         payload.paymentLink = product.paymentLink
         payload.productId = product.productId
     }
+    
 
     const result = await Package.create(payload);
     if(!result){

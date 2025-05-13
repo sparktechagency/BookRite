@@ -4,7 +4,7 @@ import { USER_ROLES } from '../../../enums/user';
 import config from '../../../config';
 
 const stripe = new Stripe(config.stripe.stripe_api_secret as string, {
-    apiVersion: "2024-06-20", 
+    apiVersion: "2025-04-30.basil", 
 });
 
 export class StripeService {
@@ -131,3 +131,4 @@ export class StripeService {
     }
   }
 }
+
