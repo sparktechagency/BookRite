@@ -5,12 +5,15 @@ export interface IBooking {
     serviceId: string;
     userId: string;
     serviceProviderId?: string;
+    price: number;
     bookingDate: Date; 
     status: 'Pending' | 'Accepted' | 'Canceled' | 'Completed';
-    paymentStatus: 'Pending' | 'Paid' | 'Refunded';
+    paymentStatus: 'Pending' | 'Refunded' | 'Paid';
     location: string; 
     contactNumber: string;
     paymentSessionId: string;
     images: string[]; 
+    createdAt: Date;
+    updatedAt: Date;
   }
  

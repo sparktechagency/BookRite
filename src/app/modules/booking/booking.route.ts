@@ -7,7 +7,8 @@ import auth from '../../middlewares/auth';
 const router = express.Router();
 
 // Route to create a booking
-router.post('/', BookingController.createBooking);
+router.post('/', auth(USER_ROLES.USER),BookingController.createBooking);
+router.put('/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN),BookingController.updateBookingStatus);
 router.get('/:serviceId',BookingController.getSertviceById);
 
 // Route to get all bookings for a specific user

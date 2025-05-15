@@ -19,7 +19,7 @@ router.route("/")
                 next();
 
             } catch (error) {
-                return res.status(500).json({ message: "Failed to Convert string to number" });
+                res.status(500).json({ message: "Failed to Convert string to number" });
             }
         },
         ReservationController.createReservation

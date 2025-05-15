@@ -56,11 +56,7 @@ export type IUser = {
     oneTimeCode: number;
     expireAt: Date;
   };
-  subscription?: {
-    status: boolean;
-    stripeSubscriptionId: string;
-    externalSubscriptionId: string;
-  };
+ isSubscribed: boolean;
   accountInformation?: {
     status: boolean;
     stripeAccountId: string;

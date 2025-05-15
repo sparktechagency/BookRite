@@ -6,8 +6,32 @@ import unlinkFile from '../../../shared/unlinkFile';
 import { query } from 'express';
 import { Review } from '../review/review.model';
 
+// const createServiceToDB = async (payload: IWcService) => {
+//   const { serviceName, serviceDescription, category ,image } = payload;
+
+//   const isExist = await Servicewc.findOne({ serviceName, serviceDescription, category });
+
+//   if (isExist) {
+//     unlinkFile(image);
+//     throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This service name already exists");
+//   }
+
+//   const result = await Servicewc.create(payload);
+
+//   if (!result) {
+//     unlinkFile(image);
+//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create service");
+//   }
+
+//   return result;
+// };
 const createServiceToDB = async (payload: IWcService) => {
-  const { serviceName, serviceDescription, category ,image } = payload;
+  const { serviceName, serviceDescription, category, image, price } = payload;
+
+  if (price === undefined || price === null || isNaN(price) || price <= 0) {
+    unlinkFile(image);
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Price is required and must be a positive number');
+  }
 
   const isExist = await Servicewc.findOne({ serviceName, serviceDescription, category });
 
@@ -26,11 +50,6 @@ const createServiceToDB = async (payload: IWcService) => {
   return result;
 };
 
-// const getServicesFromDB = async (): Promise<IWcService[]> => {
-//   return await Service.find({});
-// };
-
-//user rating
 
 
 const getServicesFromDB = async (req: any) => {

@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 import stripe from '../../../config/stripe';
 import ApiError from '../../../errors/ApiError';
 import colors from 'colors';
-import { handleSubscriptionCreated } from '../../../handlers';
+import { handleSubscriptionCreated } from '../../handlers/handleSubscriptionCreated';
 import { StatusCodes } from 'http-status-codes';
 import { logger } from '../../../shared/logger';
 

@@ -8,6 +8,11 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       required: true,
       unique: true,
     },
+    //price reference from servicewc
+    price: {
+      type: Number,
+      required: false,
+    },
 
       image: {
       type: String,

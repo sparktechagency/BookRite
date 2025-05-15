@@ -1,10 +1,11 @@
 import { StatusCodes } from 'http-status-codes';
 import Stripe from 'stripe';
-import ApiError from '../errors/ApiErrors';
-import stripe from '../config/stripe';
-import { User } from '../app/modules/user/user.model';
-import { Package } from '../app/modules/package/package.model';
-import { Subscription } from '../app/modules/subscription/subscription.model';
+import ApiError from '../../errors/ApiError';
+// Make sure the path below points to your actual Stripe client file
+import stripe from '../../config/stripe';
+import { User } from '../modules/user/user.model';
+import { Package } from '../modules/package/package.model';
+import { Subscription } from '../modules/subscription/subscription.model';
 
 export const handleSubscriptionUpdated = async (data: Stripe.Subscription) => {
 
@@ -24,8 +25,8 @@ export const handleSubscriptionUpdated = async (data: Stripe.Subscription) => {
         subscription.latest_invoice as string,
     );
 
-    const trxId = invoice?.payment_intent;
-    const amountPaid = invoice?.total / 100;
+    const trxId = invoice.payment_intent;
+    const amountPaid = invoice.total / 100;
 
     if (customer?.email) {
         // Find the user by email
@@ -41,8 +42,8 @@ export const handleSubscriptionUpdated = async (data: Stripe.Subscription) => {
         
                 if (currentActiveSubscription) {
                     if (
-                        currentActiveSubscription?.packageId?.priceId !==
-                        pricingPlan.priceId
+                        currentActiveSubscription?.package?.toString() !==
+                        pricingPlan._id.toString()
                     ) {
 
                     // Deactivate the old subscription
@@ -52,7 +53,7 @@ export const handleSubscriptionUpdated = async (data: Stripe.Subscription) => {
                     const newSubscription = new Subscription({
                         userId: existingUser._id,
                         customerId: customer?.id,
-                        packageId: pricingPlan._id,
+                        package: pricingPlan._id,
                         status: 'active',
                         trxId,
                         amountPaid,

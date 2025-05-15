@@ -5,12 +5,20 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import router from './routes';
 import { Morgan } from './shared/morgen';
 import path from 'path';
-import { stripeWebhookHandler } from './app/modules/payment/payment.controller';
+import {handleStripeWebhooks} from './app/modules/payment/payment.controller';
+import handleStripeWebhook from './app/modules/webhook/handleStripeWebhook';
 const app = express();
 app.get('/', (req, res) => {
   res.send('Server is running');
 });
-app.post('/webhook', express.raw({ type: 'application/json' }), stripeWebhookHandler);
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res, next) => {
+  try {
+    await handleStripeWebhooks(req, res);
+  } catch (err) {
+    next(err);
+  }
+});
+app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook);
 app.use(express.json());
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);

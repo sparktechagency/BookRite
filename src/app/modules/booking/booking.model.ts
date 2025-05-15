@@ -21,7 +21,7 @@ const bookingSchema = new Schema<IBooking>({
   },
   serviceId: {
     type: Schema.Types.ObjectId as any,
-    ref: 'Servicewc', // Reference to the Servicewc model
+    ref: 'Servicewc', 
     required: true,
   },
   userId: {
@@ -34,6 +34,10 @@ const bookingSchema = new Schema<IBooking>({
     ref: 'User',
     required: true,
   },
+  price: { type: Number, 
+  ref: 'Servicewc',
+  required: false 
+},
   bookingDate: { 
     type: Date, 
     required: true 
@@ -42,7 +46,7 @@ const bookingSchema = new Schema<IBooking>({
   location: { type: String, required: true },
   contactNumber: { type: String, required: true },
   status: { type: String, default: 'Pending', enum: ['Pending', 'Accepted', 'Completed'] },
-  paymentStatus: { type: String, default: 'Pending', enum: ['Pending', 'Paid', 'Refunded'] },
+  paymentStatus: { type: String, default: 'Pending', enum: ['Pending', 'Refunded', 'Paid'] },
   images: { type: [String], default: [] },
   paymentSessionId: { type: String, required: false },
 }, { timestamps: true });

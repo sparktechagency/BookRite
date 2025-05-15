@@ -37,22 +37,10 @@ const companySubscriptionDetails= catchAsync( async(req: Request, res: Response)
         data: result.subscription
     })
 });
-const purchaseSubscription = catchAsync(async (req: Request, res: Response) => {
-    const { userId, packageId } = req.body;
 
-    const subscription = await SubscriptionService.purchaseSubscription(userId, packageId);
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Subscription purchased successfully",
-        data: subscription,
-    });
-});
 
 export const SubscriptionController = {
     subscriptions,
     subscriptionDetails,
-    companySubscriptionDetails,
-    purchaseSubscription
+    companySubscriptionDetails
 }

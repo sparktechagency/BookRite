@@ -59,18 +59,10 @@ const userSchema = new Schema<IUser, UserModal>(
       ref: "Post",
       select: 0
     },
-    subscription: {
-      type: {
-        status: {
-          type: Boolean,
-          default: false,
+   isSubscribed: {
+            type: Boolean,
+            default: false
         },
-        stripeSubscriptionId: {
-          type: String,
-        },
-      },
-      select: 0,
-    },
     authentication: {
       type: {
         isResetPassword: {
@@ -88,6 +80,7 @@ const userSchema = new Schema<IUser, UserModal>(
       },
       select: 0,
     },
+ 
     accountInformation: {
       status: {
         type: Boolean,
@@ -113,8 +106,8 @@ const userSchema = new Schema<IUser, UserModal>(
 
 //exist user check
 userSchema.statics.isExistUserById = async (id: string) => {
-  const isExist = await User.findById(id);
-  return isExist;
+  const isExist = await User.findById(id).select('+password +subscription +authentication');
+  return JSON.parse(JSON.stringify(isExist));
 };
 
 userSchema.statics.isExistUserByEmail = async (email: string) => {
@@ -138,14 +131,12 @@ userSchema.statics.isMatchPassword = async (
 
 //check user
 userSchema.pre('save', async function (next) {
-  //check user
-  const isExist = await User.findOne({ email: this.email });
-  if (isExist) {
+  const existingUser = await User.findOne({ email: this.email });
+  if (existingUser && existingUser._id.toString() !== this._id.toString()) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Email already exist!');
   }
 
-  //password hash
-  if (this.password) {
+  if (this.password && this.isModified('password')) {
     this.password = await bcrypt.hash(
       this.password,
       Number(config.bcrypt_salt_rounds)
@@ -153,5 +144,6 @@ userSchema.pre('save', async function (next) {
   }
   next();
 });
+
 
 export const User = model<IUser, UserModal>('User', userSchema);

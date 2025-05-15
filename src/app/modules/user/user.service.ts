@@ -106,14 +106,15 @@ const createSuperAdminToDB = async (payload: Partial<IUser>): Promise<IUser> => 
 const getUserProfileFromDB = async (
   user: JwtPayload
 ): Promise<Partial<IUser>> => {
-  const { id } = user;
-  const isExistUser:any = await User.isExistUserById(id);
+  const id = (user as any)._id || (user as any).id; 
+  const isExistUser: any = await User.isExistUserById(id);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
   return isExistUser;
 };
+
 
 const updateProfileToDB = async (
   user: JwtPayload,

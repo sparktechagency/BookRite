@@ -1,9 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
 import Stripe from 'stripe';
-import ApiError from '../errors/ApiErrors';
-import stripe from '../config/stripe';
-import { Subscription } from '../app/modules/subscription/subscription.model';
-import { User } from '../app/modules/user/user.model';
+import ApiError from '../../errors/ApiError';
+import stripe from '../../config/stripe';
+import { Subscription } from '../modules/subscription/subscription.model';
+import { User } from '../modules/user/user.model';
 
 export const handleSubscriptionDeleted = async (data: Stripe.Subscription) => {
 

@@ -17,11 +17,6 @@ router.get("/details",
 router.get("/:id", 
     auth(USER_ROLES.USER), 
     SubscriptionController.companySubscriptionDetails
-);
-router.post("/purchase", 
-    auth(USER_ROLES.ADMIN), 
-    SubscriptionController.purchaseSubscription
 )
 
-
-export const SubscriptionsRotes = router;
+export const SubscriptionRoutes = router;

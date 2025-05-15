@@ -8,14 +8,14 @@ import { ChatRoutes } from '../app/modules/chat/chat.routes';
 import { MessageRoutes } from '../app/modules/message/message.routes';
 import { ReviewRoutes } from '../app/modules/review/review.routes';
 import { BannerRoutes } from '../app/modules/banner/banner.routes';
-import { paymentRoute } from '../app/modules/payment/payment.routes';
+import { PaymentRoutes } from '../app/modules/payment/payment.routes';
 import { OfferRouter } from '../app/modules/offer/offer.routes';
 import { NotificationRoutes } from '../app/modules/notification/notification.routes';
 import { BookmarkRoutes } from '../app/modules/bookmark/bookmark.routes';
 import { WcServiceRoutes } from '../app/modules/service/servicewc.Routes';
 import { BookingRoutes } from '../app/modules/booking/booking.route';
 import { AdminRoutes } from '../app/modules/admin/admin.routes';
-import { SubscriptionsRotes } from '../app/modules/subscription/subscription.routes';
+import { SubscriptionRoutes } from '../app/modules/subscription/subscription.routes';
 import { PackageRoutes } from '../app/modules/package/package.routes';
 
 const router = express.Router();
@@ -31,8 +31,8 @@ const apiRoutes = [
   { path: '/message', route: MessageRoutes },
   { path: '/review', route: ReviewRoutes },
   { path: '/banner', route: BannerRoutes },
-  { path: '/payment', route: paymentRoute },
-  { path: '/subscription', route: SubscriptionsRotes},
+  { path: '/payment', route: PaymentRoutes },
+  { path: '/subscription', route: SubscriptionRoutes },
   { path: '/package', route: PackageRoutes},
   { path: '/offer', route: OfferRouter },
   { path: '/notification', route: NotificationRoutes },

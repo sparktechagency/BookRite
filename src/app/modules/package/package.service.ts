@@ -6,36 +6,83 @@ import mongoose from "mongoose";
 import { createSubscriptionProduct } from "../../../helpers/createSubscriptionProductHelper";
 import stripe from "../../../config/stripe";
 
-const createPackageToDB = async(payload: IPackage): Promise<IPackage | null>=>{
+// const createPackageToDB = async(payload: IPackage): Promise<IPackage | null>=>{
 
-    const productPayload = {
-        title: payload.title,
-        description: payload.description,
-        duration: payload.duration,
-        price: Number(payload.price),
-    }
+//     const productPayload = {
+//         title: payload.title,
+//         description: payload.description,
+//         duration: payload.duration,
+//         price: Number(payload.price),
+//     }
 
-    const product = await createSubscriptionProduct(productPayload);
+//     const product = await createSubscriptionProduct(productPayload);
     
 
-    if(!product){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription product")
-    }
+//     if(!product){
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription product")
+//     }
 
-    if(product){
-        payload.paymentLink = product.paymentLink
-        payload.productId = product.productId
-    }
+//     if(product){
+//         payload.paymentLink = product.paymentLink
+//         payload.productId = product.productId
+//     }
     
 
-    const result = await Package.create(payload);
-    if(!result){
-        await stripe.products.del(product.productId);
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to created Package")
-    }
+//     const result = await Package.create(payload);
+//     if(!result){
+//         await stripe.products.del(product.productId);
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to created Package")
+//     }
 
-    return result;
-}
+//     return result;
+// }
+const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> => {
+  const productPayload = {
+    title: payload.title,
+    description: payload.description,
+    duration: payload.duration,
+    price: Number(payload.price),
+  };
+
+  // Create Stripe Product
+  const product = await createSubscriptionProduct(productPayload);
+
+  if (!product) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription product");
+  }
+
+  payload.paymentLink = product.paymentLink;
+  payload.productId = product.productId;
+
+  // Create Stripe Price
+  const stripePrice = await stripe.prices.create({
+    product: product.productId,
+    unit_amount: Math.round(Number(payload.price) * 100), // convert price to number
+    currency: 'usd',
+    recurring: {
+      interval: payload.duration === '1 year' ? 'year' : 'month',
+    }
+  });
+
+  if (!stripePrice || !stripePrice.id) {
+    // Rollback product only — no price deletion possible
+    await stripe.products.del(product.productId);
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create price for subscription product");
+  }
+
+  payload.priceId = stripePrice.id;
+
+  const result = await Package.create(payload);
+
+  if (!result) {
+    await stripe.products.del(product.productId);
+    // Can't delete price, so just leave it disabled with product deletion
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Package");
+  }
+
+  return result;
+};
+
 
 const updatePackageToDB = async(id: string, payload: IPackage): Promise<IPackage | null>=>{
 
@@ -94,6 +141,8 @@ const deletePackageToDB = async(id: string): Promise<IPackage | null>=>{
 
     return result;
 }
+
+
 
 export const PackageService = {
     createPackageToDB,

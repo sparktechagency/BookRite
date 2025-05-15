@@ -1,12 +1,12 @@
 import { StatusCodes } from 'http-status-codes';
 import Stripe from 'stripe';
-import ApiError from '../errors/ApiErrors';
-import stripe from '../config/stripe';
-import { User } from '../app/modules/user/user.model';
-import { Package } from '../app/modules/package/package.model';
-import { Subscription } from '../app/modules/subscription/subscription.model';
+import ApiError from '../../errors/ApiError';
+import stripe from '../../config/stripe';
+import { User } from '../../app/modules/user/user.model';
+import { Package } from '../modules/package/package.model';
+import { Subscription } from '../modules/subscription/subscription.model';
 import { ObjectId } from 'mongoose';
-import { sendNotifications } from '../helpers/notificationsHelper';
+import { sendNotifications } from '../../helpers/notificationsHelper';
 
 // Helper function to find and validate user
 const getUserByEmail = async (email: string) => {
@@ -94,7 +94,7 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
         const packageID: any = await getPackageByProductId(productId);
 
         // Get the current period start and end dates (Unix timestamps)
-        const currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString(); // Convert to human-readable date
+        const currentPeriodStart = new Date(subscription.current_period_start * 1000).toISOString(); 
         const currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
 
         // Create new subscription and update user status
