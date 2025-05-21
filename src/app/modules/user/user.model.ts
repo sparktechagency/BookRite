@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { StatusCodes } from 'http-status-codes';
-import { model, Schema } from 'mongoose';
+import { model, Schema, Types } from 'mongoose';
 import config from '../../../config';
 import { USER_ROLES } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
@@ -8,6 +8,12 @@ import { IUser, UserModal } from './user.interface';
 
 const userSchema = new Schema<IUser, UserModal>(
   {
+    _id: Types.ObjectId,
+    service: {
+      type: Schema.Types.ObjectId,
+      ref: "Servicewc",
+      select: 0
+    },
     name: {
       type: String,
       required: false,
@@ -110,6 +116,11 @@ userSchema.statics.isExistUserById = async (id: string) => {
   return JSON.parse(JSON.stringify(isExist));
 };
 
+//service exist
+userSchema.statics.isServiceExist = async (id: string) => {
+  const isExist = await User.findById(id).select('+service +category');
+  return isExist;
+}
 userSchema.statics.isExistUserByEmail = async (email: string) => {
   const isExist = await User.findOne({ email });
   return isExist;

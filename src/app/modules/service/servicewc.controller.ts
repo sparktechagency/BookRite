@@ -24,6 +24,8 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
       reviews: req.body.reviews || [],
       image: imagePath,
       User: req.body.User,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
     
     const result = await ServiceWcServices.createServiceToDB(data);

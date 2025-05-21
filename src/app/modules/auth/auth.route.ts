@@ -4,6 +4,7 @@ import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
 import { AuthController } from './auth.controller';
 import { AuthValidation } from './auth.validation';
+import { User } from 'mercadopago';
 const router = express.Router();
 
 router.post(
@@ -26,13 +27,14 @@ router.post(
 
 router.post(
   '/reset-password',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER,USER_ROLES.SUPER_ADMIN),
   validateRequest(AuthValidation.createResetPasswordZodSchema),
   AuthController.resetPassword
 );
 
 router.post(
   '/change-password',
-  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER,USER_ROLES.SUPER_ADMIN),
   validateRequest(AuthValidation.createChangePasswordZodSchema),
   AuthController.changePassword
 );

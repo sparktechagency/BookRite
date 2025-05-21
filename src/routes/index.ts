@@ -17,6 +17,9 @@ import { BookingRoutes } from '../app/modules/booking/booking.route';
 import { AdminRoutes } from '../app/modules/admin/admin.routes';
 import { SubscriptionRoutes } from '../app/modules/subscription/subscription.routes';
 import { PackageRoutes } from '../app/modules/package/package.routes';
+import { ReservationRoutes } from '../app/modules/reservation/reservation.routes';
+import { FaqRoutes } from '../app/modules/faq/faq.routes';
+import { portfolioRoutes } from '../app/modules/portfolio/route.portfolio';
 
 const router = express.Router();
 
@@ -38,7 +41,10 @@ const apiRoutes = [
   { path: '/notification', route: NotificationRoutes },
   { path: '/bookmark', route: BookmarkRoutes },
   { path: '/booking', route: BookingRoutes },
+  { path: '/faq', route: FaqRoutes},
+  { path: '/portfolio', route: portfolioRoutes},
   { path: '/admin', route: AdminRoutes },
+  { path: '/reservation', route: ReservationRoutes },
 ];
 
 apiRoutes.forEach(route => router.use(route.path, route.route));

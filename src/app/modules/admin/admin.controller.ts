@@ -21,6 +21,19 @@ const userList = catchAsync(async(req: Request, res: Response)=>{
         data: result
     })
 })
+const userListAdmin = catchAsync(async(req: Request, res: Response)=>{
+    const {page, limit, search} = req.query;
+    const payload = {page, limit, search};
+
+    const result = await AdminService.usersFromDBAdmin(payload)
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: "User Retrieved Successfully",
+        data: result
+    })
+})
 
 
 // const createSuperAdmin = catchAsync(async(req: Request, res: Response)=>{
@@ -199,6 +212,7 @@ const getBookings = async (req: Request, res: Response): Promise<void> => {
 
 export const AdminController = {
     userList,
+    userListAdmin,
     bookingList,
     transactionList,
     // createSuperAdmin,

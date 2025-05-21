@@ -28,6 +28,8 @@ export type IWcService = {
     }],
     default: []
   };
+  createdAt: Date
+  updatedAt: Date
 }
 
 export type ServiceWcModel = Model<IWcService, Record<string, unknown>>

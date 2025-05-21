@@ -1,18 +1,26 @@
 import express from 'express';
-import { BookingController,} from './booking.controller';
+import { BookingController } from './booking.controller';
 import { USER_ROLES } from '../../../enums/user';
-
 import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
-// Route to create a booking
-router.post('/', auth(USER_ROLES.USER),BookingController.createBooking);
-router.put('/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN),BookingController.updateBookingStatus);
-router.get('/:serviceId',BookingController.getSertviceById);
+router.post('/', auth(USER_ROLES.USER), BookingController.createBooking);
+router.put('/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN), BookingController.updateBookingStatus);
+router.get('/userstate', auth(USER_ROLES.ADMIN), BookingController.getMonthlyUserStats);
+router.get('/getAllBookings', auth(USER_ROLES.ADMIN), BookingController.getAllBookings);
+router.get('/bookingstate', auth(USER_ROLES.ADMIN), BookingController.getMonthlyBookingStats);
+router.get('/monthlyEarning', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyEarnings);
+
+// Place fixed routes first:
+router.get('/total-service', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getTotalBookingsCount);
+router.get('/with-user/:serviceId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getServiceBookingsWithUser);
+
+// Then param routes last:
+router.get('/:serviceId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getBookingsByServiceId);
 
 // Route to get all bookings for a specific user
-router.get('/',auth(USER_ROLES.USER), BookingController.getUserBookings);
+router.get('/', auth(USER_ROLES.USER), BookingController.getUserBookings);
 
 export default router;
 export const BookingRoutes = router;

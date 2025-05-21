@@ -47,7 +47,6 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                 break;
 
             default:
-                // Log unhandled event types
                 logger.warn(colors.bgGreen.bold(`Unhandled event type: ${eventType}`));
         }
     } catch (error) {

@@ -6,7 +6,7 @@ import fileUploadHandler from '../../middlewares/fileUploadHandler';
 const router = express.Router()
 
 router.post("/",
-    auth(USER_ROLES.USER),
+    auth(USER_ROLES.USER, USER_ROLES.ADMIN),
     fileUploadHandler(),
     async (req: Request, res: Response, next: NextFunction) => {
         try {

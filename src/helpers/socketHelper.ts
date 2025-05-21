@@ -1,7 +1,7 @@
 import colors from 'colors';
 import { Server } from 'socket.io';
 import { logger } from '../shared/logger';
-
+export const io = new Server();
 const socket = (io: Server) => {
   io.on('connection', socket => {
     logger.info(colors.blue('A user connected'));

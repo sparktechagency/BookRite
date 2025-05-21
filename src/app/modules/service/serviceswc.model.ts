@@ -34,6 +34,7 @@ import { IWcService, ServiceWcModel } from './servicewc.interface'
 
 const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
   {
+    User: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     serviceName: {
       type: String,
       required: true,
@@ -51,17 +52,12 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
       type: Number,
       required: false
     },
-    category: {
-      type: Schema.Types.ObjectId, 
-      required: true,
-      ref: 'Service'
-    },
-
-    User: {
-      type: Schema.Types.ObjectId,
-      required: false,
-      ref: 'User'
-    },
+    // category: {
+    //   type: Schema.Types.ObjectId, 
+    //   required: true,
+    //   ref: 'Service'
+    // },
+    category: { type: Schema.Types.ObjectId, required: true, ref: 'Service' },
     reviews: {
       type: [{
         user: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -70,7 +66,15 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
         createdAt: { type: Date, default: Date.now }
       }],
       default: []
-    }
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 )

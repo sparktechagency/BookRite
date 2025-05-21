@@ -39,6 +39,8 @@ import { Model, Types } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
 export type IUser = {
+  _id: Types.ObjectId;
+  service: Types.ObjectId;
   save(): unknown;
   name: string;
   appId: string;

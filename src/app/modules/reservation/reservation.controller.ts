@@ -1,30 +1,31 @@
-import e, { Request, Response } from "express";
-import catchAsync from "../../../shared/catchAsync";
-import { ReservationService } from "./reservation.service";
-import sendResponse from "../../../shared/sendResponse";
-import { StatusCodes } from "http-status-codes";
+import { Request, Response } from 'express';
+import { getAllUserBookingsForAdminService } from './reservation.service';  // Import the service logic
+import { StatusCodes } from 'http-status-codes';
 
-const createReservation = catchAsync(async (req: Request, res: Response) => {
-    const reservation = await ReservationService.createReservationToDB(req.body);
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Reservation created successfully",
-        data: reservation
-    })
-}); 
 
-const userReservation = catchAsync(async (req: Request, res: Response) => {
-    const reservation = await ReservationService.userReservationFromDB(req.user, req.query.status as string);
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Reservation created successfully",
-        data: reservation
-    })
-});
+export const getAllUserBookingsForAdmin = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const adminId = req.user?._id;  
+    if (!adminId) {
+       res.status(StatusCodes.UNAUTHORIZED).json({
+        success: false,
+        message: 'Unauthorized: Admin user not found',
+      });
+    }
 
-export const ReservationController = {
-    createReservation,
-    userReservation
-}
+    const bookings = await getAllUserBookingsForAdminService(adminId);
+
+    // Return bookings data
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Error fetching bookings',
+      errorMessages: error || error,
+    });
+  }
+};

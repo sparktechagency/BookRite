@@ -9,7 +9,8 @@ const router = express.Router();
 // router.post("/create-super-admin", validateRequest(AdminValidation.createAdminZodSchema), AdminController.createSuperAdmin);
 router.post("/create-admin", auth(USER_ROLES.SUPER_ADMIN), validateRequest(AdminValidation.createAdminZodSchema), AdminController.createAdmin);
 router.get("/users", auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), AdminController.userList);
-// router.get("/bookings", auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), AdminController.bookingList);
+router.get("/users-admin", auth(USER_ROLES.SUPER_ADMIN), AdminController.userListAdmin);
+// router.get("/bookings", auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), AdminController.bookingList); //offer
 router.get('/get-bookings', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),AdminController.getBookings,);
 router.patch('/accept-booking/:bookingId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),AdminController.acceptBooking,);
 router.get("/transactions", auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), AdminController.transactionList);

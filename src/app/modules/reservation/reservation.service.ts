@@ -1,51 +1,27 @@
-import { JwtPayload } from "jsonwebtoken";
-import { IReservation } from "./reservation.interface";
-import { Reservation } from "./reservation.model";
+import { Booking } from '../booking/booking.model';  
+import { Servicewc } from '../service/serviceswc.model';  
+import  ApiError  from '../../../errors/ApiError';  
+import { StatusCodes } from 'http-status-codes';
 
-const createReservationToDB = async (payload: IReservation): Promise<IReservation> => {
-    const reservation = await Reservation.create(payload);
-    if (!reservation) throw new Error('Failed to created Reservation ');
-    return reservation;
+
+export const getAllUserBookingsForAdminService = async (adminId: string) => {
+
+  const services = await Servicewc.find({ serviceProviderId: adminId });
+  
+  if (!services || services.length === 0) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'No services found for this admin');
+  }
+
+  const serviceIds = services.map(service => service._id);
+  
+  const bookings = await Booking.find({ serviceId: { $in: serviceIds } })
+    .populate('userId', 'name email contactNumber')  
+    .populate('serviceProviderId', 'name role') 
+    .exec();
+
+  if (!bookings || bookings.length === 0) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'No bookings found for this admin\'s services');
+  }
+
+  return bookings;
 };
-
-const userReservationFromDB = async (user: JwtPayload, status: string): Promise<IReservation[]> => {
-
-    const condition:any = {
-        barber: user.id
-    }
-
-    if(status) {
-        condition['status'] = status;
-    }
-
-    const reservation = await Reservation.find(condition)
-        .populate([
-            {
-                path: 'customer',
-                select: "name"
-            },
-            {
-                path: 'service',
-                populate: [
-                    {
-                        path: "title",
-                        select: "title"
-                    },
-                    {
-                        path: "category",
-                        select: "name"
-                    },
-                ]
-            }
-        ])
-        .select("customer service createdAt status price");
-
-
-    if (!reservation) throw [];
-    return reservation;
-}
-
-export const ReservationService = {
-    createReservationToDB,
-    userReservationFromDB
-}

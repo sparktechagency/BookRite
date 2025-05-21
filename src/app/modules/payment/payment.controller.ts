@@ -146,7 +146,7 @@ const createRefund = catchAsync(async (req: Request, res: Response) => {
 });
 
 // Webhook to handle Stripe events
-export const handleStripeWebhooks = async (req: Request, res: Response) => {
+export const handleStripeWebhooks = async (req: Request, res: Response): Promise<void> => {
   let event: Stripe.Event;
 
   try {
@@ -158,7 +158,8 @@ export const handleStripeWebhooks = async (req: Request, res: Response) => {
     );
   } catch (error) {
     console.error(`Webhook signature verification failed: ${error}`);
-    return res.status(400).send(`Webhook Error: ${error}`);
+     res.status(400).send(`Webhook Error: ${error}`);
+    return;
   }
 
   try {

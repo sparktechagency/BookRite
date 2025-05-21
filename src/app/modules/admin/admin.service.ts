@@ -8,6 +8,10 @@ import { IOffer } from "../offer/offer.interface";
 import { Offer } from "../offer/offer.model";
 import bcrypt from 'bcrypt';
 import { USER_ROLES } from "../../../enums/user";
+import { Service } from "../service/service.model";
+import { Servicewc } from "../service/serviceswc.model";
+import mongoose, { Types } from "mongoose";
+import { IService } from "../service/service.interface";
 
 const createSuperAdminToDB = async (payload: any): Promise<IUser> =>{
 
@@ -32,6 +36,50 @@ const createSuperAdminToDB = async (payload: any): Promise<IUser> =>{
 }
 
 const usersFromDB = async (payload: any): Promise<IUser[]> =>{
+    const {search, page, limit } = payload;
+
+    const anyConditions = [];
+
+    anyConditions.push({
+        role: "ADMIN"
+    });
+
+    //artist search here
+    if (search) {
+        anyConditions.push({
+            $or: ["name", "email"].map((field) => ({
+                [field]: {
+                    $regex: search,
+                    $options: "i"
+                }
+            }))
+        });
+    }
+    
+    const whereConditions = anyConditions.length > 0 ? { $and: anyConditions } : {};
+
+    const pages = parseInt(page) || 1;
+    const size = parseInt(limit) || 10;
+    const skip = (pages - 1) * size;
+
+    const result:any = await User.find(whereConditions).select("name email contact location gender profile service").skip(skip).limit(size);
+
+
+    const count = await User.countDocuments(whereConditions);
+
+    const data:any =  {
+        data: result,
+        meta: {
+            page: pages,
+            total: count
+        }
+    }
+
+    return data;
+}
+
+
+const usersFromDBAdmin = async (payload: any): Promise<IUser[]> =>{
     const {search, page, limit } = payload;
 
     const anyConditions = [];
@@ -79,7 +127,7 @@ const bookingFromDB = async (payload: any): Promise<IOffer[]> =>{
 
     const anyConditions:any = [];
 
-    /* if (search) {
+    if (search) {
         anyConditions.push({
             $or: ["name", "email"].map((field) => ({
                 [field]: {
@@ -88,7 +136,7 @@ const bookingFromDB = async (payload: any): Promise<IOffer[]> =>{
                 }
             }))
         });
-    } */
+    } 
 
     // Filter by status if provided
     if (status) {
@@ -388,6 +436,7 @@ const getBookingsFromDB = async () => {
 
 export const AdminService = {
     usersFromDB,
+    usersFromDBAdmin,
     bookingFromDB,
     transactionsFromDB,
     createSuperAdminToDB,
