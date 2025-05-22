@@ -36,7 +36,7 @@ const createAdmin = catchAsync(
 const createSuperAdmin = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { ...userData } = req.body;
-    const result = await UserService.createAdminToDB(userData);
+    const result = await UserService.createSuperAdminToDB(userData);
 
     sendResponse(res, {
       success: true,

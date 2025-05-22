@@ -8,7 +8,6 @@ import { IUser, UserModal } from './user.interface';
 
 const userSchema = new Schema<IUser, UserModal>(
   {
-    _id: Types.ObjectId,
     service: {
       type: Schema.Types.ObjectId,
       ref: "Servicewc",

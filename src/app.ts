@@ -23,7 +23,9 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 
 //file retrieve
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/images', express.static(path.join(process.cwd(), 'uploads/images')));
+
 
 //router
 app.use('/api/v1', router);

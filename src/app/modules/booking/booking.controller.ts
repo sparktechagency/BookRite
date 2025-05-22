@@ -9,7 +9,8 @@ import config from "../../../config";
 import { Secret } from "jsonwebtoken";
 import { User } from "../user/user.model";
 import mongoose from "mongoose";
-
+import  {io}  from '../../../helpers/socketHelper';  
+import { Notification } from "../notification/notification.model"; 
 
 // const createBooking = async (req: Request, res: Response): Promise<void> => {
 //   try {
@@ -81,9 +82,6 @@ import mongoose from "mongoose";
 //     });
 //   }
 // };
-
-import  {io}  from '../../../helpers/socketHelper';  // Make sure your '../../../app' exports the Socket.IO server as 'io'
-import { Notification } from "../notification/notification.model"; // <-- Add this import
 
 const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -171,7 +169,6 @@ const createBooking = async (req: Request, res: Response): Promise<void> => {
     });
   }
 };
-
 
 const getBookingById = async (bookingId: string) => {
  const booking = await Booking.findById(bookingId).populate('userId', 'name email contactNumber');
