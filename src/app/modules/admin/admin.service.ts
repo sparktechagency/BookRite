@@ -62,7 +62,7 @@ const usersFromDB = async (payload: any): Promise<IUser[]> =>{
     const size = parseInt(limit) || 10;
     const skip = (pages - 1) * size;
 
-    const result:any = await User.find(whereConditions).select("name email contact location gender profile service").skip(skip).limit(size);
+    const result:any = await User.find(whereConditions).select("name email contact location gender profile service createdAt updatedAt").skip(skip).limit(size);
 
 
     const count = await User.countDocuments(whereConditions);
@@ -106,7 +106,7 @@ const usersFromDBAdmin = async (payload: any): Promise<IUser[]> =>{
     const size = parseInt(limit) || 10;
     const skip = (pages - 1) * size;
 
-    const result:any = await User.find(whereConditions).select("name email contact location gender profile").skip(skip).limit(size);
+    const result:any = await User.find(whereConditions).select("name email contact location gender profile createdAt updatedAt").skip(skip).limit(size);
 
     const count = await User.countDocuments(whereConditions);
 

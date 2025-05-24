@@ -65,6 +65,7 @@ export type IUser = {
     currency: string;
   };
   stripeCustomerId?: string;
+  createdAt: Date;
 };
 
 export type UserModal = {

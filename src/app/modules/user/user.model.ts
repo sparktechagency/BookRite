@@ -104,6 +104,11 @@ const userSchema = new Schema<IUser, UserModal>(
     stripeCustomerId: {
       type: String,
     },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    }
+  
   },
 
   { timestamps: true }
