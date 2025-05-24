@@ -1,8 +1,8 @@
 import mongoose, { Document, Schema, Model } from 'mongoose';
 
 export interface IFAQ extends Document {
-  questions: string[];  // array of questions
-  answers: string[];    // array of answers
+  questions: string;  
+  answers: string;  
   createdAt: Date;
   updatedAt: Date;
 }
@@ -10,14 +10,12 @@ export interface IFAQ extends Document {
 const faqSchema = new Schema<IFAQ>(
   {
     questions: {
-      type: [String],
+      type: String,
       required: true,
-      validate: [(val: string[]) => val.length > 0, 'At least one question is required']
     },
     answers: {
-      type: [String],
+      type: String,
       required: true,
-      validate: [(val: string[]) => val.length > 0, 'At least one answer is required']
     },
   },
   { timestamps: true }

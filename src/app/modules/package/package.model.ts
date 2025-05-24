@@ -1,5 +1,6 @@
 import { model, Schema } from "mongoose";
 import { IPackage, PackageModel } from "./package.interface";
+import { z } from "zod";
 
 const packageSchema = new Schema<IPackage, PackageModel>(
     {
@@ -7,10 +8,7 @@ const packageSchema = new Schema<IPackage, PackageModel>(
             type: String,
             required: true
         },
-        description: {
-            type: String,
-            required: true
-        },
+     description: { type: String, required: true },
       price: { type: Number, required: true },
       priceId: { type: String, required: false }, 
         duration: {

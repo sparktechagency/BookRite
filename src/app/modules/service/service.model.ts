@@ -3,7 +3,7 @@ import { IService, ServiceModel } from './service.interface'
 
 const serviceSchema = new Schema<IService, ServiceModel>(
   {
-    _id: Types.ObjectId,
+    // _id: Types.ObjectId,
     CategoryName: {
       type: String,
       required: true,

@@ -1,6 +1,6 @@
 import FAQ, { IFAQ } from './faq.model';
 
-export const createFAQ = async (questions: string[], answers: string[]): Promise<IFAQ> => {
+export const createFAQ = async (questions: string, answers: string): Promise<IFAQ> => {
   if (!questions.length || !answers.length) throw new Error('Questions and answers cannot be empty arrays.');
 
   // Optional: you could check uniqueness differently now, skipping here
@@ -14,8 +14,8 @@ export const getAllFAQs = async (): Promise<IFAQ[]> => {
 
 export const updateFAQ = async (
   id: string,
-  questions?: string[],
-  answers?: string[]
+  questions?: string,
+  answers?: string
 ): Promise<IFAQ | null> => {
   const updateData: Partial<IFAQ> = {};
   if (questions) updateData.questions = questions;

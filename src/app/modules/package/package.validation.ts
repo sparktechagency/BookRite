@@ -3,7 +3,9 @@ import { z } from 'zod';
 const createPackageZodSchema = z.object({
     body: z.object({
         title: z.string({ required_error: "Title is required" }),
-        description: z.string({ required_error: "Description is required" }),
+        description: z.union([z.array(z.string()), z.string()]).optional()
+        .transform(val => typeof val === 'string' ? [val] : val),
+
         price: z
             .union([z.string(), z.number()])
             .transform((val) => (typeof val === "string" ? parseFloat(val) : val))

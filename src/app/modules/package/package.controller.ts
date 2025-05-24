@@ -15,16 +15,18 @@ const createPackage = catchAsync(async(req: Request, res: Response)=>{
     })
 })
 
-const updatePackage = catchAsync(async(req: Request, res: Response)=>{
+const updatePackage = catchAsync(async(req: Request, res: Response) => {
+    console.log("Payload to update:", req.body);
     const result = await PackageService.updatePackageToDB(req.params.id, req.body);
-
+    console.log("Update result:", result);
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
         message: "Package updated Successfully",
         data: result
-    })
-})
+    });
+});
+
 
 const getPackage = catchAsync(async(req: Request, res: Response)=>{
     const result = await PackageService.getPackageFromDB(req.query.paymentType as string);

@@ -9,19 +9,17 @@ import config from "../../../config";
 import { Secret } from "jsonwebtoken";
 import { User } from "../user/user.model";
 import mongoose from "mongoose";
-import  {io}  from '../../../helpers/socketHelper';  
-import { Notification } from "../notification/notification.model"; 
+import { getIO } from '../../../helpers/socket';
 
+import { Notification } from "../notification/notification.model"; 
+import { USER_ROLES } from "../../../enums/user";
 // const createBooking = async (req: Request, res: Response): Promise<void> => {
 //   try {
 //     const { serviceType, serviceId, bookingDate, location, images, contactNumber, serviceProviderId } = req.body;
 //     const userId = req.user?.id;
 
 //     if (!userId) {
-//       res.status(401).json({
-//         success: false,
-//         message: 'Unauthorized: User not found in token',
-//       });
+//       res.status(401).json({ success: false, message: 'Unauthorized: User not found in token' });
 //       return;
 //     }
 
@@ -35,19 +33,13 @@ import { Notification } from "../notification/notification.model";
 
 //     const serviceProvider = await User.findById(serviceProviderId);
 //     if (!serviceProvider || serviceProvider.role !== 'ADMIN') {
-//       res.status(400).json({
-//         success: false,
-//         message: 'Service provider must be an admin',
-//       });
+//       res.status(400).json({ success: false, message: 'Service provider must be an admin' });
 //       return;
 //     }
 
 //     const service = await Servicewc.findById(serviceId);
 //     if (!service) {
-//       res.status(404).json({
-//         success: false,
-//         message: 'Service not found',
-//       });
+//       res.status(404).json({ success: false, message: 'Service not found' });
 //       return;
 //     }
 
@@ -64,7 +56,32 @@ import { Notification } from "../notification/notification.model";
 
 //     await newBooking.save();
 
-//     // Include the price from the service model in the response
+//     // Create notification text (customize as needed)
+//     const notificationText = `New booking for ${service.serviceName} on ${new Date(bookingDate).toLocaleDateString()}`;
+
+//     // Create Notification document
+//     const notification = new Notification({
+//       text: notificationText,
+//       receiver: serviceProviderId,
+//       sender: userId,
+//       referenceId: newBooking._id.toString(),
+//       screen: 'OFFER',    
+//       read: false,
+//       type: 'ADMIN',
+//     });
+
+//     await notification.save();
+
+//     // Reload notification to get createdAt field
+//     const savedNotification = await Notification.findById(notification._id);
+
+//     io.to(serviceProviderId.toString()).emit('new_notification', {
+//       notificationId: notification._id,
+//       text: notificationText,
+//       bookingId: newBooking._id,
+//       createdAt: savedNotification ? (savedNotification as any).createdAt : undefined,
+//     });
+
 //     res.status(201).json({
 //       success: true,
 //       message: 'Booking created successfully',
@@ -82,8 +99,7 @@ import { Notification } from "../notification/notification.model";
 //     });
 //   }
 // };
-
-const createBooking = async (req: Request, res: Response): Promise<void> => {
+export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
     const { serviceType, serviceId, bookingDate, location, images, contactNumber, serviceProviderId } = req.body;
     const userId = req.user?.id;
@@ -126,10 +142,8 @@ const createBooking = async (req: Request, res: Response): Promise<void> => {
 
     await newBooking.save();
 
-    // Create notification text (customize as needed)
     const notificationText = `New booking for ${service.serviceName} on ${new Date(bookingDate).toLocaleDateString()}`;
 
-    // Create Notification document
     const notification = new Notification({
       text: notificationText,
       receiver: serviceProviderId,
@@ -142,15 +156,23 @@ const createBooking = async (req: Request, res: Response): Promise<void> => {
 
     await notification.save();
 
-    // Reload notification to get createdAt field
     const savedNotification = await Notification.findById(notification._id);
 
-    io.to(serviceProviderId.toString()).emit('new_notification', {
-      notificationId: notification._id,
-      text: notificationText,
-      bookingId: newBooking._id,
-      createdAt: savedNotification ? (savedNotification as any).createdAt : undefined,
-    });
+    // Emit notification to the serviceProvider room (userId)
+    // const io = getIO();
+    // io.to(serviceProviderId.toString()).emit('new_notification', {
+    //   notificationId: notification._id,
+    //   text: notificationText,
+    //   bookingId: newBooking._id,
+    //   createdAt: savedNotification ? (savedNotification as any).createdAt : undefined,
+    // });
+    const io = getIO();
+      io.emit(`notification::${userId}`, {
+        text: notificationText,
+        type: "Booking",
+        booking: newBooking,
+        createdAt: savedNotification ? (savedNotification as any).createdAt : undefined
+      });
 
     res.status(201).json({
       success: true,
@@ -169,7 +191,6 @@ const createBooking = async (req: Request, res: Response): Promise<void> => {
     });
   }
 };
-
 const getBookingById = async (bookingId: string) => {
  const booking = await Booking.findById(bookingId).populate('userId', 'name email contactNumber');
 

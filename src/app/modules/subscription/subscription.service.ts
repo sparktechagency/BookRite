@@ -26,6 +26,7 @@ const subscriptionDetailsFromDB = async (user: JwtPayload): Promise<{ subscripti
     return { subscription };
 };
 
+
 const companySubscriptionDetailsFromDB = async (id: string): Promise<{ subscription: ISubscription | {} }> => {
 
     const subscription = await Subscription.findOne({ user: id }).populate("package", "title credit").lean();

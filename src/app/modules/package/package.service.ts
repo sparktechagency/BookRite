@@ -84,24 +84,22 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
 };
 
 
-const updatePackageToDB = async(id: string, payload: IPackage): Promise<IPackage | null>=>{
+
+const updatePackageToDB = async (id: string, payload: Partial<IPackage>): Promise<IPackage | null> => {
 
     if(!mongoose.Types.ObjectId.isValid(id)){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID")
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
     }
 
-    const result = await Package.findByIdAndUpdate(
-        {_id: id},
-        payload,
-        { new: true } 
-    );
+    const result = await Package.findByIdAndUpdate(id, payload, { new: true })
+
 
     if(!result){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to Update Package")
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to Update Package");
     }
 
     return result;
-}
+};
 
 
 const getPackageFromDB = async(paymentType: string): Promise<IPackage[]>=>{

@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { AuthService } from './auth.service';
+import { User } from 'mercadopago';
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   const { ...verifyData } = req.body;
@@ -24,7 +25,10 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: StatusCodes.OK,
     message: 'User login successfully',
-    data: result.createToken,
+    data: {
+      Token: result.createToken,
+      role: result.role,
+    },
   });
 });
 
