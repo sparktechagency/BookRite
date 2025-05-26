@@ -4,6 +4,7 @@ import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { AuthService } from './auth.service';
 import { User } from 'mercadopago';
+import ApiError from '../../../errors/ApiError';
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   const { ...verifyData } = req.body;
@@ -44,10 +45,34 @@ const forgetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// const resetPassword = catchAsync(async (req: Request, res: Response) => {
+//   const token = req.headers.authorization;
+//   const { ...resetData } = req.body;
+//   const result = await AuthService.resetPasswordToDB(token!, resetData);
+
+//   sendResponse(res, {
+//     success: true,
+//     statusCode: StatusCodes.OK,
+//     message: 'Password reset successfully',
+//     data: result,
+//   });
+// });
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const token = req.headers.authorization;
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Authorization header is missing");
+  }
+
+  // Extract token from "Bearer <token>"
+  const token = authHeader.split(' ')[1]; // This will get the actual token
+
+  if (!token) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid authorization header format");
+  }
+
   const { ...resetData } = req.body;
-  const result = await AuthService.resetPasswordToDB(token!, resetData);
+  const result = await AuthService.resetPasswordToDB(token, resetData);
 
   sendResponse(res, {
     success: true,
@@ -56,6 +81,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 
 const changePassword = catchAsync(async (req: Request, res: Response) => {
   const user = req.user;

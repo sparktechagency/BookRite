@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.post('/', auth(USER_ROLES.USER), BookingController.createBooking);
 router.put('/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN), BookingController.updateBookingStatus);
-router.get('/userstate', auth(USER_ROLES.ADMIN), BookingController.getMonthlyUserStats);
+router.get('/userstate', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyUserStats);
 router.get('/getAllBookings', auth(USER_ROLES.ADMIN), BookingController.getAllBookings);
 router.get('/bookingstate', auth(USER_ROLES.ADMIN), BookingController.getMonthlyBookingStats);
 router.get('/monthlyEarning', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyEarnings);

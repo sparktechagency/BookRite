@@ -8,7 +8,11 @@ const packageSchema = new Schema<IPackage, PackageModel>(
             type: String,
             required: true
         },
-     description: { type: String, required: true },
+    //  description: { type: String, required: true },
+            description: {
+            type: [String],   
+            required: true
+        },
       price: { type: Number, required: true },
       priceId: { type: String, required: false }, 
         duration: {

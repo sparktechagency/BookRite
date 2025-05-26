@@ -39,7 +39,7 @@ import stripe from "../../../config/stripe";
 const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> => {
   const productPayload = {
     title: payload.title,
-    description: payload.description,
+     description: Array.isArray(payload.description) ? payload.description.join('\n') : payload.description,
     duration: payload.duration,
     price: Number(payload.price),
   };
