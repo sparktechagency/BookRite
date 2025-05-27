@@ -8,8 +8,8 @@ const router = express.Router();
 router.post('/', auth(USER_ROLES.USER), BookingController.createBooking);
 router.put('/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN), BookingController.updateBookingStatus);
 router.get('/userstate', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyUserStats);
-router.get('/getAllBookings', auth(USER_ROLES.ADMIN), BookingController.getAllBookings);
-router.get('/bookingstate', auth(USER_ROLES.ADMIN), BookingController.getMonthlyBookingStats);
+router.get('/getAllBookings', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getAllBookings);
+router.get('/bookingstate', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyBookingStats);
 router.get('/monthlyEarning', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyEarnings);
 
 // Place fixed routes first:
@@ -20,7 +20,7 @@ router.get('/with-user/:serviceId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMI
 router.get('/:serviceId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getBookingsByServiceId);
 
 // Route to get all bookings for a specific user
-router.get('/', auth(USER_ROLES.USER), BookingController.getUserBookings);
+router.get('/', auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getUserBookings);
 
 export default router;
 export const BookingRoutes = router;

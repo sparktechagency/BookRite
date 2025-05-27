@@ -13,6 +13,7 @@ const createUser = catchAsync(
       success: true,
       statusCode: StatusCodes.OK,
       message: 'Please check your email to verify your account. We have sent you an OTP to complete the registration process.',
+      data: result,
     })
   }
 );
@@ -84,4 +85,20 @@ const updateProfile = catchAsync(
   }
 );
 
-export const UserController = { createUser, createAdmin, getUserProfile, updateProfile,createSuperAdmin };
+//resend otp
+const resendOtp = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email } = req.body;
+
+    const result = await UserService.resendOtp(email);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: 'A new OTP has been sent to your email.',
+      data: result,
+    });
+  }
+);
+
+export const UserController = { createUser, createAdmin, getUserProfile, updateProfile,createSuperAdmin, resendOtp };

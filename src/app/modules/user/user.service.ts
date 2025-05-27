@@ -14,7 +14,7 @@ import cron from 'node-cron';
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   
   //set role
-  payload.role = USER_ROLES.USER;
+  payload.role;
   const createUser = await User.create(payload);
   if (!createUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
@@ -140,6 +140,39 @@ const updateProfileToDB = async (
   return updateDoc;
 };
 
+//resend otp
+const resendOtp = async (email: string): Promise<Partial<IUser>> => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+
+  // Generate new OTP
+  const otp = generateOTP();
+
+  // Send email with new OTP
+  const values = {
+    name: user.name,
+    otp: otp,
+    email: user.email!,
+  };
+  const createAccountTemplate = emailTemplate.createAccount(values);
+  await emailHelper.sendEmail(createAccountTemplate);
+
+  // Update OTP and expiration in DB
+  const authentication = {
+    oneTimeCode: otp,
+    expireAt: new Date(Date.now() + 3 * 60000), // 3 minutes from now
+  };
+
+  await User.findOneAndUpdate(
+    { _id: user._id },
+    { $set: { authentication } }
+  );
+
+  return { email: user.email, name: user.name };
+};
+
 
  export const UserService = {
   createUserToDB,
@@ -147,5 +180,6 @@ const updateProfileToDB = async (
   getUserProfileFromDB,
   updateProfileToDB,
   createAdminToDB,
-  createSuperAdminToDB
+  createSuperAdminToDB,
+  resendOtp
 };

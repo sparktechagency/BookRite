@@ -34,5 +34,11 @@ router
     fileUploadHandler(),
     UserController.updateProfile
   );
+  //resend otp
+router.post(
+  '/resend-otp',
+  validateRequest(UserValidation.createAdminZodSchema),
+  UserController.resendOtp
+);
 
 export const UserRoutes = router;
