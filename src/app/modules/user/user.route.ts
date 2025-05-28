@@ -37,7 +37,6 @@ router
   //resend otp
 router.post(
   '/resend-otp',
-  validateRequest(UserValidation.createAdminZodSchema),
   UserController.resendOtp
 );
 

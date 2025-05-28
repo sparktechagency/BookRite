@@ -19,7 +19,7 @@ router
 
 router
     .route("/:id")
-    .put(auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), PackageController.updatePackage)
+    .put(auth(USER_ROLES.SUPER_ADMIN), PackageController.updatePackage)
     .delete(auth(USER_ROLES.SUPER_ADMIN), PackageController.deletePackage)
 
 export const PackageRoutes = router;

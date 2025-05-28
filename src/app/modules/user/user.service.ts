@@ -141,7 +141,7 @@ const updateProfileToDB = async (
 };
 
 //resend otp
-const resendOtp = async (email: string): Promise<Partial<IUser>> => {
+const resendOtp = async (email: string): Promise<{ email: string }> => {
   const user = await User.findOne({ email });
   if (!user) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
@@ -152,7 +152,7 @@ const resendOtp = async (email: string): Promise<Partial<IUser>> => {
 
   // Send email with new OTP
   const values = {
-    name: user.name,
+    name: user.name,  // still send name in email template for personalization
     otp: otp,
     email: user.email!,
   };
@@ -170,8 +170,10 @@ const resendOtp = async (email: string): Promise<Partial<IUser>> => {
     { $set: { authentication } }
   );
 
-  return { email: user.email, name: user.name };
+  // Return only email as requested
+  return { email: user.email };
 };
+
 
 
  export const UserService = {
