@@ -341,6 +341,20 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
 //get all bookings
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
+     const { search } = req.query;
+
+    // Base query object
+    let query: any = {};
+
+    if (search) {
+
+      query = {
+        $or: [
+          { bookingReference: { $regex: search, $options: 'i' } },
+          
+        ],
+      };
+    }
     const bookings = await Booking.find()
      .sort({ createdAt: -1 })
       .populate('serviceProviderId')
@@ -369,6 +383,7 @@ export const getAllBookings = async (req: Request, res: Response) => {
     })
 }
 }
+
 
 const getServiceBookingsWithUser  = async (req: Request, res: Response): Promise<void> => {
   try {
