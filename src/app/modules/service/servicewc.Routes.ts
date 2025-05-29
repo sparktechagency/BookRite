@@ -33,6 +33,12 @@ router.get(
   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
   ServiceWcController.getServiceWcs,
 );
+
+router.get(
+  '/highest-rated',
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+    ServiceWcController.getHighestRated,
+);
 // router.post("/rating", 
 //   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER), 
 //   ServiceWcController.userRating);

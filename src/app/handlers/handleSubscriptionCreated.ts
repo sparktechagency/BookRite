@@ -81,12 +81,14 @@ const createNewSubscription = async (
 export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
     try {
         // Retrieve subscription details from Stripe
-        const subscription = await stripe.subscriptions.retrieve(data.id);
+        const subscriptionResponse = await stripe.subscriptions.retrieve(data.id);
+        // If the response is wrapped, use .data, otherwise use as is
+        const subscription = (subscriptionResponse as any).data ? (subscriptionResponse as any).data : subscriptionResponse;
         const customer = await stripe.customers.retrieve(subscription.customer as string) as Stripe.Customer;
         const productId = subscription.items.data[0]?.price?.product as string;
         const invoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
 
-        const trxId = invoice?.payment_intent as string;
+        const trxId = (invoice as any)?.payment_intent as string;
         const amountPaid = (invoice?.total || 0) / 100;
 
         // Find user and pricing plan
@@ -110,11 +112,13 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
             packageID.credit,
         );
 
-        await User.findByIdAndUpdate(
-            { _id: user._id },
-            { isSubscribed: true },
-            { new: true }
-        );
+        // await User.findByIdAndUpdate(
+        //     { _id: user._id },
+        //     { isSubscribed: true },
+        //     { new: true }
+        // );
+        await User.findByIdAndUpdate(user._id, { isSubscribed: true }, { new: true });
+
 
         const notifications = {
             text: `${user?.company} has arrived`,

@@ -191,8 +191,11 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     });
   }
 };
+
 const getBookingById = async (bookingId: string) => {
- const booking = await Booking.findById(bookingId).populate('userId', 'name email contactNumber');
+ const booking = await Booking.findById(bookingId)
+  .sort({ createdAt: -1 })
+ .populate('userId', 'name email contactNumber');
 
   if (!booking) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
@@ -227,6 +230,7 @@ const updateBookingStatus = async (req: Request, res: Response): Promise<void> =
         success: false,
         message: 'Booking not found',
       });
+      
       return;
     }
 
@@ -262,6 +266,7 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
     }
 
     const bookings = await Booking.find({ userId })
+     .sort({ createdAt: -1 })
       .populate('serviceProviderId')
       .populate('serviceId', 'serviceName serviceDescription image category ')
       .populate('userId')
@@ -337,6 +342,7 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
 export const getAllBookings = async (req: Request, res: Response) => {
   try {
     const bookings = await Booking.find()
+     .sort({ createdAt: -1 })
       .populate('serviceProviderId')
       .populate('serviceId')
       .populate('userId')
@@ -376,6 +382,7 @@ const getServiceBookingsWithUser  = async (req: Request, res: Response): Promise
     }
 
     const bookings = await Booking.find({ serviceId })
+     .sort({ createdAt: -1 })
       .populate('userId', 'name email')  // populate only name and email of user
       .select('paymentStatus serviceType serviceId serviceProviderId bookingDate status location images createdAt updatedAt userId')
       .exec();
@@ -632,6 +639,7 @@ export const getMonthlyUserStats = async (req: Request, res: Response) => {
     });
   }
 };
+
 export const getMonthlyBookingStats = async (req: Request, res: Response) => {
   try {
     const year = Number(req.query.year) || new Date().getFullYear();

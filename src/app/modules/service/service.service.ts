@@ -25,11 +25,41 @@ const createServiceToDB = async (payload: IService) => {
   return createService
 }
 
-const getServicesFromDB = async (): Promise<IService[]> => {
-  const result = await Service.find({})
-  return result;
-}
+// const getServicesFromDB = async (): Promise<IService[]> => {
+//   const result = await Service.find({})
+//    .sort({ createdAt: -1 })
+//   return result;
+// }
+const getServicesFromDB = async (req: any): Promise<IService[]> => {
+  const { filter, search } = req.query;
+  let query = Service.find().populate({
+ 
+    path: 'User',
+    select: 'name -_id ,rating',
+    populate: {
+      path: 'User',
+      select: 'name -_id',
+    },
+  });
 
+
+  if (search) {
+    const searchTerm = search.toLowerCase();
+    query = query.find({
+      CategoryName: { $regex: searchTerm, $options: 'i' },
+    });
+  }
+
+  if (filter) {
+    const filterArray = filter.split(',');
+    query = query.find({
+      CategoryName: { $in: filterArray },
+    });
+  }
+
+    const result = await query;
+    return result;
+  }
 const updateServiceToDB = async (id: string, payload: IService) => {
   const isExistService: any = await Service.findById(id);
 

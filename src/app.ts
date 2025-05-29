@@ -6,7 +6,9 @@ import router from './routes';
 import { Morgan } from './shared/morgen';
 import path from 'path';
 import {handleStripeWebhooks, PaymentController} from './app/modules/payment/payment.controller';
-import handleStripeWebhook from './app/modules/webhook/handleStripeWebhook';
+import handleStripeWebhook, { unifiedStripeWebhookHandler } from './app/modules/webhook/handleStripeWebhook';
+import auth from './app/middlewares/auth';
+import { User } from './app/modules/user/user.model';
 const app = express();
 app.get('/', (req, res) => {
   res.send('Server is running');
@@ -14,7 +16,13 @@ app.get('/', (req, res) => {
 
 app.post('/api/v1/webhook', express.raw({ type: 'application/json' }), PaymentController.handleStripeWebhooks);
 
-app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), handleStripeWebhook);
+app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res, next) => {
+  try {
+    await unifiedStripeWebhookHandler(req, res);
+  } catch (err) {
+    next(err);
+  }
+});
 app.use(express.json());
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
@@ -25,6 +33,21 @@ app.use(express.urlencoded({ extended: true }));
 //file retrieve
 // app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/images', express.static(path.join(process.cwd(), 'uploads/images')));
+app.get('/api/v1/user/subscription-status', auth('ADMIN'), (req, res, next) => {
+  (async () => {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.json({
+      isSubscribed: user.isSubscribed,
+    });
+  })().catch(next);
+});
 
 
 //router

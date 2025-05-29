@@ -46,7 +46,7 @@ const readNotificationToDB = async (user: JwtPayload): Promise<INotification | u
 
 // get notifications for admin
 const adminNotificationFromDB = async () => {
-    const result = await Notification.find({ type: "ADMIN" });
+    const result = await Notification.find({ type: "ADMIN"});
     return result;
 }
 

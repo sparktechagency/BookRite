@@ -85,7 +85,7 @@ export const createSubscriptionProduct = async (payload: Partial<IPackage>): Pro
         description: payload.description as string,
     });
 
-    let interval: 'month' | 'year' = 'month'; // Default to 'month'
+    let interval: 'year' | 'month' = 'year'; // Default to 'month'
     let intervalCount = 1; // Default to every 1 month
 
     // Map duration to interval_count

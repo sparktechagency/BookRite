@@ -92,6 +92,26 @@ const getServicesFromDB = async (req: any) => {
   return services;
 };
 
+//get highest rated services
+const getHighestRatedServices = async (limit: number = 5) => {
+  const services = await Servicewc.find()
+    .sort({ rating: -1 })
+    .limit(limit)
+    .populate({
+      path: 'category',
+      select: 'CategoryName price image -_id User',
+      populate: {
+        path: 'User',
+        select: 'name -_id',
+      },
+    })
+    .populate({
+      path: 'User',
+      select: 'name -_id',
+    })
+    .exec();
+  return services;
+};
 
 const updateServiceToDB = async (id: string, payload: IWcService) => {
   const existingService = await Servicewc.findById(id);
@@ -124,5 +144,6 @@ export const ServiceWcServices = {
   getServicesFromDB,
   updateServiceToDB,
   deleteServiceToDB,
+  getHighestRatedServices
   
 };

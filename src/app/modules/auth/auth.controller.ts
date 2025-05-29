@@ -65,7 +65,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Extract token from "Bearer <token>"
-  const token = authHeader.split(' ')[1]; // This will get the actual token
+  const token = authHeader.split(' ')[1];
 
   if (!token) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid authorization header format");

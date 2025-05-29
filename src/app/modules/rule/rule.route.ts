@@ -7,22 +7,22 @@ const router = express.Router();
 //privacy policy
 router
   .route('/privacy-policy')
-  .post(auth(USER_ROLES.ADMIN), RuleController.createPrivacyPolicy)
-  .patch(auth(USER_ROLES.ADMIN), RuleController.updatePrivacyPolicy)
+  .post(auth(USER_ROLES.SUPER_ADMIN), RuleController.createPrivacyPolicy)
+  .patch(auth(USER_ROLES.SUPER_ADMIN), RuleController.updatePrivacyPolicy)
   .get(RuleController.getPrivacyPolicy);
 
 //terms and conditions
 router
   .route('/terms-and-conditions')
-  .post(auth(USER_ROLES.ADMIN), RuleController.createTermsAndCondition)
-  .patch(auth(USER_ROLES.ADMIN), RuleController.updateTermsAndCondition)
+  .post(auth(USER_ROLES.SUPER_ADMIN), RuleController.createTermsAndCondition)
+  .patch(auth(USER_ROLES.SUPER_ADMIN), RuleController.updateTermsAndCondition)
   .get(RuleController.getTermsAndCondition);
 
 //privacy policy
 router
   .route('/about')
-  .post(auth(USER_ROLES.ADMIN), RuleController.createAbout)
-  .patch(auth(USER_ROLES.ADMIN), RuleController.updateAbout)
+  .post(auth(USER_ROLES.SUPER_ADMIN), RuleController.createAbout)
+  .patch(auth(USER_ROLES.SUPER_ADMIN), RuleController.updateAbout)
   .get(RuleController.getAbout);
 
 export const RuleRoutes = router;

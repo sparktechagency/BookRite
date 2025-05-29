@@ -39,8 +39,6 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
   });
 
 
-  
-
 // const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
 //   const result = await ServiceWcServices.getServicesFromDB();
 
@@ -63,6 +61,15 @@ const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getHighestRated = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceWcServices.getHighestRatedServices();
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Highest rated services retrieved successfully',
+    data: result,
+  });
+});
 
 
 const updateServiceWc = catchAsync(async (req: Request, res: Response) => {
@@ -104,5 +111,6 @@ export const ServiceWcController = {
   createServiceWc,
   getServiceWcs,
   updateServiceWc,
-  deleteServiceWc
+  deleteServiceWc,
+  getHighestRated
 };
