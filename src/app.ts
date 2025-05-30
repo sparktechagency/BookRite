@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 
 //file retrieve
 // app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-app.use('/images', express.static(path.join(process.cwd(), 'uploads/images')));
+app.use('/uploads/images', express.static(path.join(process.cwd(), 'uploads/images')));
 app.get('/api/v1/user/subscription-status', auth('ADMIN'), (req, res, next) => {
   (async () => {
     const userId = req.user.id;
