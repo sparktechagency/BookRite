@@ -6,10 +6,10 @@ import { ServiceServices } from './service.service'
 
 const createService = catchAsync(async (req: Request, res: Response) => {
   const serviceData = req.body;
-
+  
   let image = "";
   if (req.files && "image" in req.files && req.files.image[0]) {
-    image = `/images/${req.files.image[0].filename}`;
+    image = `/uploads/images/${req.files.image[0].filename}`;
   }
   const data = {
     ...serviceData,
@@ -28,7 +28,8 @@ const createService = catchAsync(async (req: Request, res: Response) => {
 
 const getServices = catchAsync(async (req: Request, res: Response) => {
   const result = await ServiceServices.getServicesFromDB(req);
-
+ //sorting by createdAt in descending order
+  result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,

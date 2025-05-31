@@ -15,7 +15,6 @@ const getNotificationFromDB= catchAsync(async(req: Request, res: Response)=>{
     })
 })
 
-
 const adminNotificationFromDB= catchAsync(async(req: Request, res: Response)=>{
     const result = await NotificationService.adminNotificationFromDB();
 

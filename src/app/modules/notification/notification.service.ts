@@ -11,9 +11,12 @@ const getNotificationFromDB = async (user: JwtPayload, query: Record<string, any
     const size = parseInt(limit) || 10;
     const skip = (pages - 1) * size;
 
+   
+
     const notifications = await Notification.find({ receiver: user.id })
         .populate({ path: "sender", select: "name profile" })
         .skip(skip)
+        .sort({ createdAt: -1 })
         .limit(size);
 
 
@@ -46,8 +49,12 @@ const readNotificationToDB = async (user: JwtPayload): Promise<INotification | u
 
 // get notifications for admin
 const adminNotificationFromDB = async () => {
-    const result = await Notification.find({ type: "ADMIN"});
-    return result;
+    const notifications = await Notification.find({ type: "ADMIN" })
+        .populate({ path: "sender", select: "name profile" })
+        .sort({ createdAt: -1 });
+        
+    // const result = await Notification.find({ type: "ADMIN"});
+    return notifications;
 }
 
 // read notifications only for admin
