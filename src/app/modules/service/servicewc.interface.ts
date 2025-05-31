@@ -17,7 +17,7 @@ export type IWcService = {
   image: string;
   price: number;
   category: Types.ObjectId; 
-  User: Types.ObjectId;
+  // User: Types.ObjectId;
   reviews: {
     findIndex(arg0: (review: any) => boolean): unknown;
     push(arg0: { user: any; comment: any; rating: any; createdAt: Date; }): unknown;
@@ -28,6 +28,11 @@ export type IWcService = {
     }],
     default: []
   };
+   serviceProvider?: {
+    _id: string;
+    name: string;
+  };
+  User?: undefined;
   createdAt: Date
   updatedAt: Date
 }

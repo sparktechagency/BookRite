@@ -12,7 +12,6 @@ router.post(
   '/create-servicewc',
   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
   fileUploadHandler(),
-  validateRequest(ServiceWcValidation.createServiceZodSchema),
   ServiceWcController.createServiceWc,
 );
 

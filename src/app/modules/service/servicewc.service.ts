@@ -52,23 +52,58 @@ const createServiceToDB = async (payload: IWcService) => {
 
 
 
+// const getServicesFromDB = async (req: any) => {
+//   const { filter, search } = req.query;
+//   let query = Servicewc.find().populate({
+//     path: 'category',
+//     select: 'CategoryName price image -_id User',
+//     populate: {
+//       path: 'User',
+//       select: 'name',
+//     },
+//   }).populate({
+//     path: 'User',
+//     select: 'name -_id serviceProviderId',
+//   });
+
+
+//   if (search) {
+//     const searchTerm = search.toLowerCase();
+//     query = query.find({
+//       serviceName: { $regex: searchTerm, $options: 'i' },
+//     });
+//   }
+
+//   if (filter) {
+//     const { minPrice, maxPrice, rating } = filter;
+//     if (minPrice || maxPrice || rating) {
+//       query = query.find({
+//         price: { $gte: minPrice || 0, $lte: maxPrice || Infinity },
+//         rating: { $gte: rating || 0 },
+//       });
+//     }
+//   }
+
+//   // Execute the query and return results
+//   const services = await query.exec();
+//   return services;
+// };
+type IWcServiceWithProvider = IWcService & { _id: any; serviceProviderId?: any };
+
 const getServicesFromDB = async (req: any) => {
   const { filter, search } = req.query;
+
   let query = Servicewc.find().populate({
     path: 'category',
     select: 'CategoryName price image -_id User',
     populate: {
       path: 'User',
-      select: 'name -_id',
+      select: 'name',
     },
   }).populate({
     path: 'User',
-    select: 'name -_id',
+    select: 'name _id',
   });
-
-  
-
-  
 
   if (search) {
     const searchTerm = search.toLowerCase();
@@ -87,10 +122,22 @@ const getServicesFromDB = async (req: any) => {
     }
   }
 
-  // Execute the query and return results
   const services = await query.exec();
-  return services;
+
+  // Rename User field to serviceProvider
+const processedServices = services.map(service => {
+  const obj = service.toObject();
+  if (obj.User) {
+    (obj as any).serviceProvider = obj.User;
+    delete obj.User;
+  }
+  return obj;
+});
+
+
+  return processedServices;
 };
+
 
 //get highest rated services
 const getHighestRatedServices = async (limit: number = 5) => {
@@ -98,7 +145,7 @@ const getHighestRatedServices = async (limit: number = 5) => {
     .sort({ rating: -1 })
     .limit(limit)
     .populate({
-      path: 'category',
+      path: 'category serviceType',
       select: 'CategoryName price image -_id User',
       populate: {
         path: 'User',

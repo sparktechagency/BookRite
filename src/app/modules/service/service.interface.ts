@@ -4,7 +4,7 @@ export type IService = {
   _id: Types.ObjectId;
   CategoryName: string;
   image: string;
-   User: Types.ObjectId;
+  User: Types.ObjectId;
    price: number
    createdAt: Date;
    updatedAt: Date

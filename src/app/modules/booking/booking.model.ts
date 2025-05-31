@@ -1,24 +1,7 @@
 import mongoose, { Document, model, Schema } from 'mongoose';
 import {IBooking} from "./booking.interface";
 const bookingSchema = new Schema<IBooking>({
-  serviceType: {
-    type: String,
-    required: true,
-    enum: [
-      'Home Service',
-      'Washings',
-      'Plumbing',
-      'Painting',
-      'Electrician',
-      'Cleaning',
-      'Handyman',
-      'Gardening',
-      'Removalists',
-      'IT',
-      'Car Mechanic',
-      'AC Technician',
-    ],
-  },
+
   serviceId: {
     type: Schema.Types.ObjectId as any,
     ref: 'Servicewc', 

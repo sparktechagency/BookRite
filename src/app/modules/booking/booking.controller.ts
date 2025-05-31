@@ -101,7 +101,7 @@ import { USER_ROLES } from "../../../enums/user";
 // };
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { serviceType, serviceId, bookingDate, location, images, contactNumber, serviceProviderId } = req.body;
+    const { serviceId, bookingDate, location, images, contactNumber, serviceProviderId } = req.body;
     const userId = req.user?.id;
 
     if (!userId) {
@@ -109,7 +109,7 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (!serviceType || !serviceId || !bookingDate || !location || !contactNumber || !serviceProviderId) {
+    if ( !serviceId || !bookingDate || !location || !contactNumber || !serviceProviderId) {
       res.status(400).json({
         success: false,
         message: 'Please provide all required fields: serviceType, serviceId, bookingDate, location, contactNumber, serviceProviderId',
@@ -130,7 +130,6 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     }
 
     const newBooking = new Booking({
-      serviceType,
       serviceId,
       userId,
       serviceProviderId,
