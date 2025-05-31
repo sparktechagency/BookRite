@@ -8,6 +8,7 @@ export type IWcService = {
   image: string;
   price: number;
   category: Types.ObjectId; 
+  location: string;
   // User: Types.ObjectId;
   reviews: {
     findIndex(arg0: (review: any) => boolean): unknown;

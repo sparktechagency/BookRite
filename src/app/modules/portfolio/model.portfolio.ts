@@ -6,9 +6,8 @@ import { IPortfolio } from './interface.porfolio';
 const portfolioSchema = new Schema<IPortfolio>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true }, 
-    title: { type: String, required: true },
-    description: { type: String },
-    skills: [{ type: String }],
+    // title: { type: String, required: true },
+    // description: { type: String },
     projects: [
       {
         name: { type: String, required: true },

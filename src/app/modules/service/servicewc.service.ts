@@ -139,26 +139,40 @@ const processedServices = services.map(service => {
   return processedServices;
 };
 
-
-//get highest rated services
 const getHighestRatedServices = async (limit: number = 5) => {
-  const services = await Servicewc.find()
-    .sort({ rating: -1 })
-    .limit(limit)
+  // const { filter, search } = req.query;
+
+  let query = Servicewc.find()
     .populate({
-      path: 'category serviceType',
+      //location services
+      path: 'category',
       select: 'CategoryName price image -_id User',
       populate: {
         path: 'User',
-        select: 'name -_id',
+        select: 'name',
       },
     })
     .populate({
       path: 'User',
-      select: 'name -_id',
+      select: 'name _id',
     })
-    .exec();
-  return services;
+    .sort({ createdAt: -1 });
+
+  query = query.sort({ 'reviews.rating': -1 }).limit(limit);
+  const services = await query.exec();
+
+  // Rename User field to serviceProvider
+const processedServices = services.map(service => {
+  const obj = service.toObject();
+  if (obj.User) {
+    (obj as any).serviceProvider = obj.User;
+    delete obj.User;
+  }
+  return obj;
+});
+
+
+  return processedServices;
 };
 
 const updateServiceToDB = async (id: string, payload: IWcService) => {

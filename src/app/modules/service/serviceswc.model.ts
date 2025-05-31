@@ -41,6 +41,10 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
       type: Date,
       default: Date.now,
     },
+    location: {
+      type: String,
+      required: true
+    },
   },
   { timestamps: true }
 )

@@ -17,4 +17,12 @@ export const createOrUpdatePortfolio = async (
 
   const portfolio = new Portfolio({ userId, ...data });
   return portfolio.save();
+
 };
+
+//delete portfolio
+export const deletePortfolio = async (userId: string): Promise<IPortfolio | null> => {
+  const portfolio = await Portfolio.findOneAndDelete({ userId });
+
+  return portfolio;
+} 

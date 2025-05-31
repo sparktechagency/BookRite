@@ -63,6 +63,7 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
     reviews: req.body.reviews || [],
     image: imagePath,
     User: userId,
+    location: req.body.location,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
