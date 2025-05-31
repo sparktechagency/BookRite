@@ -383,6 +383,27 @@ export const getAllBookings = async (req: Request, res: Response) => {
 }
 }
 
+const getBookingLocation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    console.log('Booking ID:', bookingId); 
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+       res.status(404).json({ success: false, message: 'Booking not found' });
+       return;
+    }
+
+    res.status(200).json({
+      success: true,
+      location: booking.location,
+      booking,
+    });
+  } catch (error: any) {
+    console.error(error);  // log full error
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
 
 const getServiceBookingsWithUser  = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -715,7 +736,8 @@ export const BookingController = {
   getMonthlyBookingStats,
   getMonthlyUserStats,
   getAllBookings,
-  getMonthlyEarnings
+  getMonthlyEarnings,
+  getBookingLocation
   
 };
     function next() {

@@ -21,6 +21,8 @@ router.get('/:serviceId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), Bookin
 
 // Route to get all bookings for a specific user
 router.get('/', auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getUserBookings);
+//location
+router.get('/location/:bookingId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.USER), BookingController.getBookingLocation);
 
 export default router;
 export const BookingRoutes = router;

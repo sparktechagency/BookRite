@@ -27,6 +27,7 @@ const bookingSchema = new Schema<IBooking>({
   },
 
   location: { type: String, required: true },
+
   contactNumber: { type: String, required: true },
   status: { type: String, default: 'Pending', enum: ['Pending', 'Accepted', 'Completed'] },
   paymentStatus: { type: String, default: 'Pending', enum: ['Pending', 'Refunded', 'Paid'] },
