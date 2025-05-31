@@ -79,17 +79,6 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
-//   const result = await ServiceWcServices.getServicesFromDB();
-
-//   sendResponse(res, {
-//     success: true,
-//     statusCode: StatusCodes.OK,
-//     message: 'Services retrieved successfully',
-//     data: result,
-//   });
-// });
-
 const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
   const result = await ServiceWcServices.getServicesFromDB(req);
 

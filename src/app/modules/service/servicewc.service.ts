@@ -88,22 +88,23 @@ const createServiceToDB = async (payload: IWcService) => {
 //   const services = await query.exec();
 //   return services;
 // };
-type IWcServiceWithProvider = IWcService & { _id: any; serviceProviderId?: any };
-
 const getServicesFromDB = async (req: any) => {
   const { filter, search } = req.query;
 
-  let query = Servicewc.find().populate({
-    path: 'category',
-    select: 'CategoryName price image -_id User',
-    populate: {
+  let query = Servicewc.find()
+    .populate({
+      path: 'category',
+      select: 'CategoryName price image -_id User',
+      populate: {
+        path: 'User',
+        select: 'name',
+      },
+    })
+    .populate({
       path: 'User',
-      select: 'name',
-    },
-  }).populate({
-    path: 'User',
-    select: 'name _id',
-  });
+      select: 'name _id',
+    })
+    .sort({ createdAt: -1 });
 
   if (search) {
     const searchTerm = search.toLowerCase();

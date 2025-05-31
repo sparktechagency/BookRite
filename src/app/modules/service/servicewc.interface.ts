@@ -1,17 +1,8 @@
-// import { Model } from 'mongoose';
-
-// export type IWcService = {
-//   serviceName: string;
-//   serviceDescription: string;
-//   image: string;
-//   category: string,
-// }
-
-// export type ServiceWcModel = Model<IWcService, Record<string, unknown>>
 
 import { Model, Schema, Types } from 'mongoose';
 
 export type IWcService = {
+  User?: undefined;
   serviceName: string;
   serviceDescription: string;
   image: string;
@@ -32,7 +23,7 @@ export type IWcService = {
     _id: string;
     name: string;
   };
-  User?: undefined;
+
   createdAt: Date
   updatedAt: Date
 }
