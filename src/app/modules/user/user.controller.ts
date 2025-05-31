@@ -101,4 +101,42 @@ const resendOtp = catchAsync(
   }
 );
 
-export const UserController = { createUser, createAdmin, getUserProfile, updateProfile,createSuperAdmin, resendOtp };
+  const updateUserLocationController: any = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+
+    const userId = req.user?.id; 
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized: User ID missing" });
+    }
+
+    const { longitude, latitude } = req.body;
+
+    const updatedUser = await UserService.updateUserLocation(
+      userId,
+      longitude,
+      latitude,
+      
+    );
+
+    res.json({ message: "Location updated successfully", user: updatedUser });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+ const getUsersWithLocationController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const users = await UserService.getUsersWithLocationAccess();
+    res.json(users);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+export const UserController = { createUser, createAdmin, getUserProfile, updateProfile,createSuperAdmin, resendOtp,getUsersWithLocationController, updateUserLocationController };

@@ -48,7 +48,10 @@ export type IUser = {
   dateOfBirth: string;
   email: string;
   password?: string;
-  location: string;
+    location?: {
+        type: string;
+        coordinates: number[];
+    };
   profile?: string;
   post?: Types.ObjectId;
   verified: boolean;

@@ -40,4 +40,13 @@ router.post(
   UserController.resendOtp
 );
 
+router.patch('/location',
+    auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    UserController.updateUserLocationController
+);
+router.get('/location',
+    auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+    UserController.getUsersWithLocationController
+);
+
 export const UserRoutes = router;

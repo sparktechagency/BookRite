@@ -47,9 +47,16 @@ const userSchema = new Schema<IUser, UserModal>(
       select: 0,
       minlength: 8,
     },
-    location: {
-      type: String,
-      default: ""
+        location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], 
+        default: [0, 0],
+      },
     },
     profile: {
       type: String,
@@ -112,6 +119,7 @@ isSubscribed: {
   },
 
   { timestamps: true }
+  
 );
 
 //exist user check

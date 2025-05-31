@@ -174,6 +174,29 @@ const resendOtp = async (email: string): Promise<{ email: string }> => {
   return { email: user.email };
 };
 
+ const updateUserLocation = async (
+  userId: string,
+  longitude: number,
+  latitude: number,
+) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  user.location = {
+    type: "Point",
+    coordinates: [longitude, latitude],
+  };
+  await user.save();
+  return user;
+};
+
+ const getUsersWithLocationAccess = async () => {
+  const users = await User.find(
+    { location: { $exists: true, $ne: null } },
+    { name: 1, email: 1, location: 1 } // Select only necessary fields
+  );
+  return users;
+};
 
 
  export const UserService = {
@@ -183,5 +206,7 @@ const resendOtp = async (email: string): Promise<{ email: string }> => {
   updateProfileToDB,
   createAdminToDB,
   createSuperAdminToDB,
-  resendOtp
+  resendOtp,
+  updateUserLocation,
+  getUsersWithLocationAccess
 };
