@@ -67,7 +67,7 @@ const updateProfile = catchAsync(
     const user = req.user;
     let profile;
     if (req.files && 'image' in req.files && req.files.image[0]) {
-      profile = `/images/${req.files.image[0].filename}`;
+      profile = `/uploads/images/${req.files.image[0].filename}`;
     }
 
     const data = {

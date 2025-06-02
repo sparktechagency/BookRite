@@ -43,6 +43,7 @@ export type IUser = {
   save(): unknown;
   name: string;
   appId: string;
+  gender?: string;
   role: USER_ROLES;
   contact: string;
   dateOfBirth: string;

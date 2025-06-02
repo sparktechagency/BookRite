@@ -38,6 +38,11 @@ router.get(
   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
     ServiceWcController.getHighestRated,
 );
+router.get(
+  '/:userId',
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+  ServiceWcController.getServicesByAdminId,
+);
 // router.post("/rating", 
 //   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER), 
 //   ServiceWcController.userRating);

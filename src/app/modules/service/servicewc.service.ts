@@ -5,6 +5,8 @@ import { Servicewc } from './serviceswc.model';
 import unlinkFile from '../../../shared/unlinkFile';
 import { query } from 'express';
 import { Review } from '../review/review.model';
+import { User } from '../user/user.model';
+import { USER_ROLES } from '../../../enums/user';
 
 // const createServiceToDB = async (payload: IWcService) => {
 //   const { serviceName, serviceDescription, category ,image } = payload;
@@ -138,6 +140,62 @@ const processedServices = services.map(service => {
 
   return processedServices;
 };
+// get specific ADMIN services
+const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
+  const { filter, search } = req.query;
+
+  // First, verify the user is an ADMIN (optional but recommended)
+  const adminUser = await User.findById(userId).select('role');
+  if (!adminUser || (adminUser.role !== USER_ROLES.ADMIN && adminUser.role !== USER_ROLES.SUPER_ADMIN)) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'User is not authorized as admin');
+  }
+
+  let query = Servicewc.find({ User: userId }) 
+    .populate({
+      path: 'category',
+      select: 'CategoryName price image -_id User',
+      populate: {
+        path: 'User',
+        select: 'name',
+      },
+    })
+    .populate({
+      path: 'User',
+      select: 'name _id',
+    })
+    .sort({ createdAt: -1 });
+
+  if (search) {
+    const searchTerm = search.toLowerCase();
+    query = query.find({
+      serviceName: { $regex: searchTerm, $options: 'i' },
+    });
+  }
+
+  if (filter) {
+    const { minPrice, maxPrice, rating } = filter;
+    if (minPrice || maxPrice || rating) {
+      query = query.find({
+        price: { $gte: minPrice || 0, $lte: maxPrice || Infinity },
+        rating: { $gte: rating || 0 },
+      });
+    }
+  }
+
+  const services = await query.exec();
+
+  // Rename User field to serviceProvider for better clarity
+  const processedServices = services.map(service => {
+    const obj = service.toObject();
+    if (obj.User) {
+      (obj as any).serviceProvider = obj.User;
+      delete obj.User;
+    }
+    return obj;
+  });
+
+  return processedServices;
+};
 
 const getHighestRatedServices = async (limit: number = 5) => {
   // const { filter, search } = req.query;
@@ -206,6 +264,7 @@ export const ServiceWcServices = {
   getServicesFromDB,
   updateServiceToDB,
   deleteServiceToDB,
-  getHighestRatedServices
+  getHighestRatedServices,
+  getServicesByAdminIdFromDB
   
 };

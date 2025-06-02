@@ -17,6 +17,11 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       required: false,
     },
+    gender: {
+      type: String,
+      required: false,
+      default: "",
+    },
     appId: {
       type: String,
       required: false,

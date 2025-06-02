@@ -101,6 +101,22 @@ const getHighestRated = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// 
+const getServicesByAdminId = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  // Optional: you could validate if adminId belongs to an admin user here before fetching services
+
+  const result = await ServiceWcServices.getServicesByAdminIdFromDB(userId, req);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: `Services created by admin ${userId} retrieved successfully`,
+    data: result,
+  });
+});
+
 
 const updateServiceWc = catchAsync(async (req: Request, res: Response) => {
   const id = req.params.id;
@@ -142,5 +158,6 @@ export const ServiceWcController = {
   getServiceWcs,
   updateServiceWc,
   deleteServiceWc,
-  getHighestRated
+  getHighestRated,
+  getServicesByAdminId
 };
