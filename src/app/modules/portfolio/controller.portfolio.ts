@@ -34,7 +34,27 @@ export const createOrUpdatePortfolio = async (req: Request, res: Response): Prom
       return;
     }
 
-    const data = req.body; 
+    const data = req.body;
+
+    // multer stores files in req.files.image as an array (because you used .fields)
+    if (req.files && 'image' in req.files) {
+      const imageFiles = (req.files as { [fieldname: string]: Express.Multer.File[] }).image;
+      data.image = data.image || [];
+
+      imageFiles.forEach(file => {
+        const imageUrl = `/uploads/images/${file.filename}`;
+        data.image.push(imageUrl);
+      });
+    }
+
+    // Validate required fields
+    if (!data.name || !data.description) {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: "Name and description are required."
+      });
+      return;
+    }
 
     const portfolio = await portfolioService.createOrUpdatePortfolio(userId, data);
 
@@ -47,6 +67,7 @@ export const createOrUpdatePortfolio = async (req: Request, res: Response): Prom
     });
   }
 };
+
 
 //delete portfolio
 export const deletePortfolio = async (req: Request, res: Response): Promise<void> => {

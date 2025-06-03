@@ -66,7 +66,7 @@ const fileUploadHandler = () => {
     storage: storage,
     fileFilter: filterFilter,
   }).fields([
-    { name: 'image', maxCount: 3 }
+    { name: 'image', maxCount: 6 }
   ]);
   return upload;
 };

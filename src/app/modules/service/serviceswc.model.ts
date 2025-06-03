@@ -5,6 +5,7 @@ import { IWcService, ServiceWcModel } from './servicewc.interface'
 const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
   {
     User: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    Bookmark: { type: Schema.Types.ObjectId, ref: 'Bookmark', required: false },
     serviceName: {
       type: String,
       required: true,

@@ -6,21 +6,23 @@ import { StatusCodes } from "http-status-codes";
 
 
 
-const createBanner = catchAsync(async (req:Request, res:Response) => {
-
+const createBanner = catchAsync(async (req: Request, res: Response) => {
     const bannerData = req.body;
-    let image = "";
-    if (req.files && "image" in req.files && req.files.image[0]) {
-        image = `/images/${req.files.image[0].filename}`;
+
+    let images: string[] = [];
+
+    if (req.files && "image" in req.files) {
+        const imageFiles = (req.files as { [field: string]: Express.Multer.File[] }).image;
+        images = imageFiles.map(file => `/uploads/images/${file.filename}`);
     }
-    
+
     const data = {
         ...bannerData,
-        image,
+        image: images,  // pass array of image paths
     };
-  
+
     const result = await BannerService.createBannerToDB(data);
-  
+
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
@@ -28,6 +30,7 @@ const createBanner = catchAsync(async (req:Request, res:Response) => {
         data: result,
     });
 });
+
   
 const getAllBanner = catchAsync(async (req:Request, res:Response) => {
 

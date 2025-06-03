@@ -3,6 +3,8 @@ import { Model, Schema, Types } from 'mongoose';
 
 export type IWcService = {
   User?: undefined;
+  Bookmark?: undefined;
+  // _id: Types.ObjectId;
   serviceName: string;
   serviceDescription: string;
   image: string;

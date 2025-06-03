@@ -9,7 +9,7 @@ const createBannerToDB = async (payload:IBanner): Promise<IBanner> => {
 
   const createBanner:any = await Banner.create(payload);
   if (!createBanner) {
-    unlinkFile(payload.image)
+    unlinkFile(payload.image[4])
     throw new ApiError(StatusCodes.OK, "Failed to created banner");
   }
 

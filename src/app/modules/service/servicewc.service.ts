@@ -7,6 +7,7 @@ import { query } from 'express';
 import { Review } from '../review/review.model';
 import { User } from '../user/user.model';
 import { USER_ROLES } from '../../../enums/user';
+import { Bookmark } from '../bookmark/bookmark.model';
 
 // const createServiceToDB = async (payload: IWcService) => {
 //   const { serviceName, serviceDescription, category ,image } = payload;
@@ -54,20 +55,24 @@ const createServiceToDB = async (payload: IWcService) => {
 
 
 
+
 // const getServicesFromDB = async (req: any) => {
 //   const { filter, search } = req.query;
-//   let query = Servicewc.find().populate({
-//     path: 'category',
-//     select: 'CategoryName price image -_id User',
-//     populate: {
-//       path: 'User',
-//       select: 'name',
-//     },
-//   }).populate({
-//     path: 'User',
-//     select: 'name -_id serviceProviderId',
-//   });
 
+//   let query = Servicewc.find()
+//     .populate({
+//       path: 'category',
+//       select: 'CategoryName price image -_id User',
+//       populate: {
+//         path: 'User',
+//         select: 'name',
+//       },
+//     })
+//     .populate({
+//       path: 'User',
+//       select: 'name _id',
+//     })
+//     .sort({ createdAt: -1 });
 
 //   if (search) {
 //     const searchTerm = search.toLowerCase();
@@ -86,10 +91,22 @@ const createServiceToDB = async (payload: IWcService) => {
 //     }
 //   }
 
-//   // Execute the query and return results
 //   const services = await query.exec();
-//   return services;
+
+//   // Rename User field to serviceProvider
+// const processedServices = services.map(service => {
+//   const obj = service.toObject();
+//   if (obj.User) {
+//     (obj as any).serviceProvider = obj.User;
+//     delete obj.User;
+//   }
+//   return obj;
+// });
+
+
+//   return processedServices;
 // };
+
 const getServicesFromDB = async (req: any) => {
   const { filter, search } = req.query;
 
@@ -120,26 +137,41 @@ const getServicesFromDB = async (req: any) => {
     if (minPrice || maxPrice || rating) {
       query = query.find({
         price: { $gte: minPrice || 0, $lte: maxPrice || Infinity },
-        rating: { $gte: rating || 0 },
+        // You cannot filter by rating directly here because it's in nested reviews array
       });
     }
   }
 
   const services = await query.exec();
 
-  // Rename User field to serviceProvider
-const processedServices = services.map(service => {
-  const obj = service.toObject();
-  if (obj.User) {
-    (obj as any).serviceProvider = obj.User;
-    delete obj.User;
-  }
-  return obj;
-});
+  // Process each service to add bookmarkCount and average rating
+  const processedServices = services.map(service => {
+    const obj: any = service.toObject();
 
+    // Rename User to serviceProvider
+    if (obj.User) {
+      obj.serviceProvider = obj.User;
+      delete obj.User;
+    }
+
+    obj.bookmarkCount = obj.Bookmark ? 1 : 0;
+    delete obj.Bookmark;
+
+    // Calculate average rating from reviews
+    if (obj.reviews && obj.reviews.length > 0) {
+      const ratings = obj.reviews.map((r: any) => r.rating || 0);
+      const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
+      obj.rating = totalRating / ratings.length;
+    } else {
+      obj.rating = 0;
+    }
+
+    return obj;
+  });
 
   return processedServices;
 };
+
 // get specific ADMIN services
 const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
   const { filter, search } = req.query;
@@ -218,16 +250,39 @@ const getHighestRatedServices = async (limit: number = 5) => {
 
   query = query.sort({ 'reviews.rating': -1 }).limit(limit);
   const services = await query.exec();
+    const processedServices = services.map(service => {
+    const obj: any = service.toObject();
+
+    // Rename User to serviceProvider
+    if (obj.User) {
+      obj.serviceProvider = obj.User;
+      delete obj.User;
+    }
+
+    obj.bookmarkCount = obj.Bookmark ? 1 : 0;
+    delete obj.Bookmark;
+
+    // Calculate average rating from reviews
+    if (obj.reviews && obj.reviews.length > 0) {
+      const ratings = obj.reviews.map((r: any) => r.rating || 0);
+      const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
+      obj.rating = totalRating / ratings.length;
+    } else {
+      obj.rating = 0;
+    }
+
+    return obj;
+  });
 
   // Rename User field to serviceProvider
-const processedServices = services.map(service => {
-  const obj = service.toObject();
-  if (obj.User) {
-    (obj as any).serviceProvider = obj.User;
-    delete obj.User;
-  }
-  return obj;
-});
+// const processedServices = services.map(service => {
+//   const obj = service.toObject();
+//   if (obj.User) {
+//     (obj as any).serviceProvider = obj.User;
+//     delete obj.User;
+//   }
+//   return obj;
+// });
 
 
   return processedServices;
