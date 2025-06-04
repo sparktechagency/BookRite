@@ -9,16 +9,19 @@ import { StatusCodes } from "http-status-codes";
 const createBanner = catchAsync(async (req: Request, res: Response) => {
     const bannerData = req.body;
 
-    let images: string[] = [];
-
-    if (req.files && "image" in req.files) {
-        const imageFiles = (req.files as { [field: string]: Express.Multer.File[] }).image;
-        images = imageFiles.map(file => `/uploads/images/${file.filename}`);
-    }
+  
+  let images = "";
+  if (req.files && "image" in req.files && req.files.image[0]) {
+    images = `/uploads/images/${req.files.image[0].filename}`;
+  }
+    // if (req.files && "image" in req.files) {
+    //     const imageFiles = (req.files as { [field: string]: Express.Multer.File[] }).image;
+    //     images = imageFiles.map(file => `/uploads/images/${file.filename}`);
+    // }
 
     const data = {
         ...bannerData,
-        image: images,  // pass array of image paths
+        image: images, 
     };
 
     const result = await BannerService.createBannerToDB(data);
