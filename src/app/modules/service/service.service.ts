@@ -6,6 +6,8 @@ import unlinkFile from '../../../shared/unlinkFile'
 import { Post } from '../post/post.model'
 import { IPost } from '../post/post.interface'
 import { Bookmark } from '../bookmark/bookmark.model'
+import { Servicewc } from './serviceswc.model'
+import { IWcService } from './servicewc.interface'
 
 const createServiceToDB = async (payload: IService) => {
   const { CategoryName, image } = payload;
@@ -89,27 +91,69 @@ const deleteServiceToDB = async (id: string): Promise<IService | null> => {
   return deleteService
 }
 
-const getServiceByCategoryFromDB = async (service: string): Promise<IPost[]> => {
+// const getServiceByCategoryFromDB = async (service: string): Promise<IPost[]> => {
 
 
-  // find latest provider by rating
-  const services: any = await Post.find({category: service})
+//   // find latest provider by rating
+//   const services: any = await Post.find({category: service})
+//     .sort({ createdAt: -1 })
+//     .select("image title rating adult location")
+//     .lean();
+
+//   const result = await Promise.all(
+//     services.map(async (item: any) => {
+//       const isBookmark = await Bookmark.findOne({ service: item?._id });
+//       return {
+//         ...item,
+//         bookmark: !!isBookmark, // Add bookmark field as a boolean
+//       };
+//     })
+//   );
+
+//   return result;
+// }
+const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): Promise<IWcService[]> => {
+  // Validate categoryId
+  if (!categoryId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Category ID is required');
+  }
+
+  // Find services by category with basic fields
+  const services = await Servicewc.find({ category: categoryId })
     .sort({ createdAt: -1 })
-    .select("image title rating adult location")
+    .select('image serviceName rating location price category')
+    .populate('category', 'CategoryName image')
     .lean();
 
-  const result = await Promise.all(
-    services.map(async (item: any) => {
-      const isBookmark = await Bookmark.findOne({ service: item?._id });
-      return {
-        ...item,
-        bookmark: !!isBookmark, // Add bookmark field as a boolean
-      };
-    })
-  );
+  // If no services found, return empty array
+  if (!services.length) {
+    return [];
+  }
 
-  return result;
-}
+  // Get bookmark status for each service (if userId provided)
+  if (userId) {
+    const serviceIds = services.map((service: { _id: any }) => service._id);
+    const userBookmarks = await Bookmark.find({
+      user: userId,
+      service: { $in: serviceIds }
+    }).lean();
+
+    const bookmarkMap = new Map(
+      userBookmarks.map(bookmark => [bookmark.service.toString(), true])
+    );
+
+    // Add bookmark status to each service
+     services.map((service: { _id: { toString: () => string } }) => ({
+      ...service,
+      isBookmarked: bookmarkMap.has(service._id.toString())
+    }));
+  }
+
+  return services.map((service: any) => ({
+    ...service,
+    isBookmarked: false
+  }));
+};
 
 export const ServiceServices = {
   createServiceToDB,

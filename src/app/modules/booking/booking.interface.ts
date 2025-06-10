@@ -1,13 +1,13 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 export interface IBooking {
     serviceType: 'Home Service' | 'Washing' | 'Plumbing' | 'Painting' | 'Electrician' | 'Cleaning' | 'Handyman' | 'Gardening' | 'Removalists' | 'IT' | 'Car Mechanic' | 'AC Technician';
-    serviceId: string;
+    serviceId: Types.ObjectId;
     userId: string;
     serviceProviderId?: string;
     price: number;
     bookingDate: Date; 
-    status: 'Pending' | 'Accepted' | 'Canceled' | 'Completed';
+    status: 'Pending' | 'Accepted' | 'Completed' | 'Cancelled';
     paymentStatus: 'Pending' | 'Refunded' | 'Paid';
     location: string; 
     contactNumber: string;

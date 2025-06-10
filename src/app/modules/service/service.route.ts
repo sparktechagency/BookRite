@@ -30,8 +30,8 @@ router.get('/',
   ServiceController.getServices,
 )
 
-router.get('/:service',
-  auth(USER_ROLES.USER),
+router.get('/:serviceId',
+  auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
   ServiceController.getServiceByCategory,
 )
 

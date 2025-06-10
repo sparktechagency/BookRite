@@ -267,8 +267,8 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
     const bookings = await Booking.find({ userId })
      .sort({ createdAt: -1 })
       .populate('serviceProviderId')
-      .populate('serviceId', 'serviceName serviceDescription image category ')
-      .populate('userId')
+      .populate('serviceId', 'serviceName serviceDescription image category price location reviews')
+      .populate('userId' , 'reviews name email contactNumber')
  
       .exec();
 
@@ -297,6 +297,9 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
             description: (booking.serviceId as any).serviceDescription,
             image: (booking.serviceId as any).image,
             categoryId: (booking.serviceId as any).category,
+            categoryName: (booking.serviceId as any).category?.name || '',
+            reviews: (booking.serviceId as any).reviews || [],
+            
           }
         : null,
       user: booking.userId
@@ -468,7 +471,8 @@ const getServiceBookingsWithUser  = async (req: Request, res: Response): Promise
 };
 
 
- export const getBookingsByServiceId = async (req: Request, res: Response): Promise<void> => {
+
+export const getBookingsByServiceId = async (req: Request, res: Response): Promise<void> => {
   try {
     const { serviceId } = req.params;
 
@@ -490,6 +494,7 @@ const getServiceBookingsWithUser  = async (req: Request, res: Response): Promise
     // Query bookings for the valid serviceId
     const bookings = await Booking.find({ serviceId })
       .populate('userId', 'name email contactNumber')
+      .populate('serviceProviderId', 'name email profile')
       .exec();
 
     if (!bookings || bookings.length === 0) {
@@ -499,20 +504,21 @@ const getServiceBookingsWithUser  = async (req: Request, res: Response): Promise
       });
     }
 
-    res.status(StatusCodes.OK).json({
+     res.status(StatusCodes.OK).json({
       success: true,
       data: bookings
     });
+    
   } catch (error: any) {
     console.error("Error fetching bookings by serviceId:", error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "An error occurred while fetching bookings for the service.",
-      errorMessages: error.message || String(error),
+      error: error.message || "Internal server error"
     });
   }
 };
-  
+
 export const getTotalBookingsCount = async (req: Request, res: Response): Promise<void> => {
   try {
     const totalBookings = await Booking.countDocuments();
@@ -725,6 +731,85 @@ export const getMonthlyBookingStats = async (req: Request, res: Response) => {
 };
 
 
+export const cancelBooking = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user?.id;
+    const userRole = req.user?.role;
+
+    if (!userId) {
+       res.status(401).json({ success: false, message: 'Unauthorized: User not found in token' });
+    }
+
+    const booking = await Booking.findOne({ bookingId: bookingId });
+
+    if (!booking) {
+       res.status(404).json({ success: false, message: 'Booking not found' });
+    return;
+      }
+
+    // Check if the booking is already cancelled
+    if (booking.status === 'Cancelled') {
+      console.log('Booking already cancelled:', booking);
+       res.status(400).json({ success: false, message: 'This booking has already been cancelled.' });
+    }
+
+    const isUserBookingOwner = booking.userId.toString() === userId;
+    const isAdmin = userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.USER;
+
+    if (!isUserBookingOwner && !isAdmin) {
+       res.status(403).json({ success: false, message: 'You are not authorized to cancel this booking' });
+    }
+
+    // Updating the booking status instead of creating a new booking object
+    booking.status = 'Cancelled'; 
+    await booking.save();  // Ensure this updates the same document (booking) in the database
+
+    const notificationText = `Booking on ${new Date(booking.bookingDate).toLocaleDateString()} has been cancelled`;
+
+    const notification = new Notification({
+      text: notificationText,
+      receiver: isUserBookingOwner ? booking.serviceProviderId : booking.userId,
+      sender: userId,
+      referenceId: booking._id.toString(),
+      screen: 'BOOKING',
+      read: false,
+      type: isAdmin ? 'USER' : 'ADMIN',
+    });
+
+    await notification.save();
+
+    const io = getIO();
+    io.emit(`notification::${notification.receiver}`, {
+      text: notificationText,
+      type: 'Booking Cancelled',
+      bookingId: booking._id,
+      createdAt: notification.createdAt,
+    });
+
+    // Ensure that this is the final response
+     res.status(200).json({
+      success: true,
+      message: 'Booking cancelled successfully',
+      data: booking,  // The same booking should be returned here
+    });
+  } catch (error: any) {
+    console.error(error);
+    if (!res.headersSent) {  // Check if headers are already sent before sending an error response
+       res.status(500).json({
+        success: false,
+        message: 'Error cancelling booking',
+        errorMessages: error.message || error,
+      });
+    }
+  }
+};
+
+
+
+
+
+
 export const BookingController = {
   createBooking,
   getUserBookings,
@@ -737,7 +822,8 @@ export const BookingController = {
   getMonthlyUserStats,
   getAllBookings,
   getMonthlyEarnings,
-  getBookingLocation
+  getBookingLocation,
+  cancelBooking,
   
 };
     function next() {

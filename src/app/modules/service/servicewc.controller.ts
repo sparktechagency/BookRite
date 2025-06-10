@@ -68,10 +68,9 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
     updatedAt: new Date(),
   };
 
-  const result = await ServiceWcServices.createServiceToDB(data);
-  const resultObj = result.toObject() as any;
-  resultObj.serviceProviderId = resultObj.User;
-  delete resultObj.User;
+  const result = await ServiceWcServices.createServiceToDB(data, userId);
+  const resultObj = { ...result, serviceProviderId: (result as any).User };
+  delete (resultObj as any).User;
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,

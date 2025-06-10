@@ -12,6 +12,11 @@ const bookmarkSchema = new Schema<IBookmark, BookmarkModel>(
             type: Schema.Types.ObjectId,
             ref: "Servicewc",
             required: true
+        },
+            category: {
+            type: Schema.Types.ObjectId,
+            ref: "Service",
+            required: false
         }
     }, 
     {

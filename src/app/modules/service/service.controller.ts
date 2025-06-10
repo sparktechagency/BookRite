@@ -74,7 +74,7 @@ const deleteService = catchAsync(async (req: Request, res: Response) => {
 })
 
 const getServiceByCategory = catchAsync(async (req: Request, res: Response) => {
-  const service = req.params.service
+  const service = req.params.serviceId
   const result = await ServiceServices.getServiceByCategoryFromDB(service)
 
   sendResponse(res, {

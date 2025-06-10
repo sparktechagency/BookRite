@@ -3,6 +3,7 @@ import ApiError from "../../../errors/ApiError";
 import { IBookmark } from "./bookmark.interface";
 import { Bookmark } from "./bookmark.model";
 import { JwtPayload } from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const toggleBookmark = async (payload: JwtPayload): Promise<string> => {
 
@@ -28,16 +29,53 @@ const toggleBookmark = async (payload: JwtPayload): Promise<string> => {
     }
 };
 
+// const toggleBookmark = async (payload: { user: string; service: string }): Promise<string> => {
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+  
+//   try {
+//     const existingBookmark = await Bookmark.findOneAndDelete({
+//       user: payload.user,
+//       service: payload.service
+//     }).session(session);
 
-const getBookmark = async (user: JwtPayload): Promise<IBookmark[]>=>{
-
-    const result:any = await Bookmark.find({ user: user?.id })
-        .populate({
-            path: 'service',
-            select: 'location totalRating category rating image'
-        }).select("service")
+//     if (!existingBookmark) {
+//       await Bookmark.create([payload], { session });
+//       await session.commitTransaction();
+//       return "Bookmark added successfully";
+//     }
     
-    return result;
+//     await session.commitTransaction();
+//     return "Bookmark removed successfully";
+//   } catch (error) {
+//     await session.abortTransaction();
+//     throw new ApiError(StatusCodes.EXPECTATION_FAILED, "Failed to toggle bookmark");
+//   } finally {
+//     session.endSession();
+//   }
+// };
+const getBookmark = async (user: JwtPayload): Promise<IBookmark[]> => {
+  const result = await Bookmark.find({ user: user?.id })
+    .populate({
+      path: 'service', 
+      select: 'serviceName price image location reviews category', 
+
+    })
+    .populate({
+      path: 'user', 
+      select: 'location', 
+    })
+    .select("service CategoryName ") 
+      
+    .populate({
+      path: 'category', 
+      select: 'location', 
+    })
+    .select("service CategoryName ") 
+
+
+  return result;
 }
+
 
 export const BookmarkService = {toggleBookmark, getBookmark}

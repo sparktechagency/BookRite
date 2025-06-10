@@ -8,6 +8,7 @@ export type INotification = {
     referenceId?: string;
     screen?: "OFFER" | "CHAT";
     type?: "ADMIN";
+    createdAt?: Date;
 };
 
 export type NotificationModel = Model<INotification>;

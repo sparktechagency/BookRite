@@ -22,20 +22,27 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
             required: false
         },
         screen: {
-            type: String,
-            enum: ['OFFER', 'CHAT'],
-            required: false
-        },
+    type: String,
+    enum: ['OFFER', 'CHAT', 'BOOKING'], 
+    required: true,
+  },
+
+
         read: {
             type: Boolean,
             default: false
         },
         type: {
             type: String,
-            enum: ['ADMIN'],
+            enum: ['ADMIN','USER','Booking Cancelled', 'Booking Accepted', 'Booking Completed', 'Booking Rejected'],
             required: false
-        }
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now   
+        },
     },
+
     {
         timestamps: true
     }

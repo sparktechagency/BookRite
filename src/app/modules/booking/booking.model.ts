@@ -29,10 +29,11 @@ const bookingSchema = new Schema<IBooking>({
   location: { type: String, required: true },
 
   contactNumber: { type: String, required: true },
-  status: { type: String, default: 'Pending', enum: ['Pending', 'Accepted', 'Completed'] },
+  status: { type: String, default: 'Pending', enum: ['Pending', 'Accepted', 'Completed', 'Cancelled'] },
   paymentStatus: { type: String, default: 'Pending', enum: ['Pending', 'Refunded', 'Paid'] },
   images: { type: [String], default: [] },
   paymentSessionId: { type: String, required: false },
+  createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 
 export const Booking = model<IBooking>('Booking', bookingSchema);

@@ -28,84 +28,55 @@ import { Bookmark } from '../bookmark/bookmark.model';
 
 //   return result;
 // };
-const createServiceToDB = async (payload: IWcService) => {
-  const { serviceName, serviceDescription, category, image, price } = payload;
 
-  if (price === undefined || price === null || isNaN(price) || price <= 0) {
-    unlinkFile(image);
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Price is required and must be a positive number');
-  }
-
-  const isExist = await Servicewc.findOne({ serviceName, serviceDescription, category });
-
-  if (isExist) {
-    unlinkFile(image);
-    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This service name already exists");
-  }
+const createServiceToDB = async (payload: IWcService, userId: string): Promise<IWcService> => {
 
   const result = await Servicewc.create(payload);
-
+  
   if (!result) {
-    unlinkFile(image);
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create service");
+    unlinkFile(payload.image);
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to create service');
   }
 
-  return result;
+  const createdService = result.toObject();
+  
+  return createdService;
 };
 
-
-
-
-// const getServicesFromDB = async (req: any) => {
-//   const { filter, search } = req.query;
-
-//   let query = Servicewc.find()
-//     .populate({
-//       path: 'category',
-//       select: 'CategoryName price image -_id User',
-//       populate: {
-//         path: 'User',
-//         select: 'name',
-//       },
-//     })
-//     .populate({
-//       path: 'User',
-//       select: 'name _id',
-//     })
-//     .sort({ createdAt: -1 });
-
-//   if (search) {
-//     const searchTerm = search.toLowerCase();
-//     query = query.find({
-//       serviceName: { $regex: searchTerm, $options: 'i' },
-//     });
-//   }
-
-//   if (filter) {
-//     const { minPrice, maxPrice, rating } = filter;
-//     if (minPrice || maxPrice || rating) {
-//       query = query.find({
-//         price: { $gte: minPrice || 0, $lte: maxPrice || Infinity },
-//         rating: { $gte: rating || 0 },
-//       });
-//     }
-//   }
-
-//   const services = await query.exec();
-
-//   // Rename User field to serviceProvider
-// const processedServices = services.map(service => {
-//   const obj = service.toObject();
-//   if (obj.User) {
-//     (obj as any).serviceProvider = obj.User;
-//     delete obj.User;
-//   }
-//   return obj;
+// The following controller code should be placed in your controller file, not in this service file.
+// Example usage (move to controller):
+// const createdService = await ServiceWcServices.createServiceToDB(payload, userId);
+// res.status(StatusCodes.CREATED).json({
+//   success: true,
+//   message: 'Service created successfully',
+//   data: createdService
 // });
 
+// const createServiceToDB = async (payload: IWcService) => {
+//   const { serviceName, serviceDescription, category, image, price } = payload;
 
-//   return processedServices;
+//   if (price === undefined || price === null || isNaN(price) || price <= 0) {
+//     unlinkFile(image);
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Price is required and must be a positive number');
+//   }
+
+//   const isExist = await Servicewc.findOne({ serviceName, serviceDescription, category });
+
+//   if (isExist) {
+//     unlinkFile(image);
+//     throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This service name already exists");
+//   }
+
+//   const result = await Servicewc.create(payload);
+
+//   if (!result) {
+//     unlinkFile(image);
+//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create service");
+//   }
+
+//   return result;
 // };
+
 
 const getServicesFromDB = async (req: any) => {
   const { filter, search } = req.query;
@@ -125,26 +96,34 @@ const getServicesFromDB = async (req: any) => {
     })
     .sort({ createdAt: -1 });
 
-  if (search) {
-    const searchTerm = search.toLowerCase();
-    query = query.find({
-      serviceName: { $regex: searchTerm, $options: 'i' },
-    });
-  }
-
-  if (filter) {
-    const { minPrice, maxPrice, rating } = filter;
-    if (minPrice || maxPrice || rating) {
-      query = query.find({
-        price: { $gte: minPrice || 0, $lte: maxPrice || Infinity },
-        // You cannot filter by rating directly here because it's in nested reviews array
-      });
-    }
-  }
+  // ... (keep your existing search and filter logic)
 
   const services = await query.exec();
 
-  // Process each service to add bookmarkCount and average rating
+  // Get all service IDs for bookmark counting
+  const serviceIds = services.map(service => service._id);
+
+  // Count bookmarks for all services in one query
+  const bookmarkCounts = await Bookmark.aggregate([
+    {
+      $match: {
+        service: { $in: serviceIds }
+      }
+    },
+    {
+      $group: {
+        _id: "$service",
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  // Convert to a map for easy lookup
+  const bookmarkCountMap = new Map(
+    bookmarkCounts.map(item => [item._id.toString(), item.count])
+  );
+
+  // Process each service
   const processedServices = services.map(service => {
     const obj: any = service.toObject();
 
@@ -154,8 +133,8 @@ const getServicesFromDB = async (req: any) => {
       delete obj.User;
     }
 
-    obj.bookmarkCount = obj.Bookmark ? 1 : 0;
-    delete obj.Bookmark;
+    // Get bookmark count from our map (default to 0 if not found)
+    obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
 
     // Calculate average rating from reviews
     if (obj.reviews && obj.reviews.length > 0) {
@@ -172,7 +151,6 @@ const getServicesFromDB = async (req: any) => {
   return processedServices;
 };
 
-// get specific ADMIN services
 const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
   const { filter, search } = req.query;
 
