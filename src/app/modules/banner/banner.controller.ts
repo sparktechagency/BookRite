@@ -35,17 +35,17 @@ const createBanner = catchAsync(async (req: Request, res: Response) => {
 });
 
   
-const getAllBanner = catchAsync(async (req:Request, res:Response) => {
+const getAllBanner = catchAsync(async (req: Request, res: Response) => {
+  const result = await BannerService.getAllBannerFromDB();
 
-    const result = await BannerService.getAllBannerFromDB();
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Banner retrieved successfully",
-        data: result,
-    });
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Banner retrieved successfully",
+    data: result,
+  });
 });
+
   
 const updateBanner =catchAsync(async (req:Request, res:Response) => {
 

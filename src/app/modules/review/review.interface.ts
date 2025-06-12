@@ -5,7 +5,7 @@ export type IReview = {
     service: Types.ObjectId;
     user: Types.ObjectId;
     comment: string;
-    rating: number;
+    rating: string;
 }
 
 export type ReviewModel = Model<IReview>;

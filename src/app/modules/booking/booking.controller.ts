@@ -305,22 +305,107 @@ const updateBookingStatus = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+// const getUserBookings = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const userId = req.user?._id;
+//     if (!userId) {
+//        res.status(StatusCodes.UNAUTHORIZED).json({
+//         success: false,
+//         message: 'Unauthorized: User not authenticated',
+//       });
+//     }
+
+//     const bookings = await Booking.find({ userId })
+//      .sort({ createdAt: -1 })
+//       .populate('serviceProviderId')
+//       .populate('serviceId', 'serviceName serviceDescription image category price location reviews')
+//       .populate('userId' , 'reviews name email contactNumber')
+ 
+//       .exec();
+
+//     if (!bookings || bookings.length === 0) {
+//        res.status(StatusCodes.NOT_FOUND).json({
+//         success: false,
+//         message: 'No bookings found for this user.',
+//       });
+//     }
+
+//     // Map to clean format
+//     const formattedBookings = bookings.map(booking => ({
+//       bookingId: booking._id,
+//       serviceType: booking.serviceType,
+//       bookingDate: booking.bookingDate,
+//       location: booking.location,
+//       contactNumber: booking.contactNumber,
+//       status: booking.status,
+//       paymentStatus: booking.paymentStatus,
+//       images: booking.images || [],
+//       price: typeof booking.serviceId === 'object' && booking.serviceId !== null ? (booking.serviceId as any).price : 0,
+//       service: typeof booking.serviceId === 'object' && booking.serviceId !== null
+//         ? {
+//             id: (booking.serviceId as any)._id,
+//             name: (booking.serviceId as any).serviceName,
+//             description: (booking.serviceId as any).serviceDescription,
+//             image: (booking.serviceId as any).image,
+//             categoryId: (booking.serviceId as any).category,
+//             categoryName: (booking.serviceId as any).category?.name || '',
+//             reviews: (booking.serviceId as any).reviews || [],
+            
+//           }
+//         : null,
+//       user: booking.userId
+//         ? {
+//             id:( booking.userId as any)._id,
+//             name: (booking.userId as any).name,
+//             email: (booking.userId as any).email,
+//           }
+//         : null,
+//       serviceProvider: booking.serviceProviderId
+//         ? {
+//             id: (booking.serviceProviderId as any)._id,
+//             name: (booking.serviceProviderId as any).name,
+//             email: (booking.serviceProviderId as any).email,
+//             role: (booking.serviceProviderId as any).role,
+//             profile: (booking.serviceProviderId as any).profile,
+//             verified: (booking.serviceProviderId as any).verified,
+//             accountStatus: (booking.serviceProviderId as any).accountInformation?.status || false,
+//             isSubscribed: (booking.serviceProviderId as any).isSubscribed || false,
+//           }
+//         : null,
+//       createdAt: (booking.createdAt),
+//       updatedAt: booking.updatedAt,
+//     }));
+
+//     res.status(StatusCodes.OK).json({
+//       success: true,
+//       data: formattedBookings,
+//     });
+//   } catch (error) {
+//     console.error(error);
+//     const err = error as ApiError;
+//     res.status(err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+//       success: false,
+//       message: err.message || 'Error fetching bookings',
+//       errorMessages: error,
+//     });
+//   }
+// };
 const getUserBookings = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?._id;
     if (!userId) {
-       res.status(StatusCodes.UNAUTHORIZED).json({
+      res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
         message: 'Unauthorized: User not authenticated',
       });
+      return;
     }
 
     const bookings = await Booking.find({ userId })
-     .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 })
       .populate('serviceProviderId')
       .populate('serviceId', 'serviceName serviceDescription image category price location reviews')
-      .populate('userId' , 'reviews name email contactNumber')
- 
+      .populate('userId', 'reviews name email contactNumber')
       .exec();
 
     if (!bookings || bookings.length === 0) {
@@ -328,9 +413,9 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
         success: false,
         message: 'No bookings found for this user.',
       });
+      return;
     }
 
-    // Map to clean format
     const formattedBookings = bookings.map(booking => ({
       bookingId: booking._id,
       serviceType: booking.serviceType,
@@ -340,22 +425,25 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
       status: booking.status,
       paymentStatus: booking.paymentStatus,
       images: booking.images || [],
-      price: typeof booking.serviceId === 'object' && booking.serviceId !== null ? (booking.serviceId as any).price : 0,
-      service: typeof booking.serviceId === 'object' && booking.serviceId !== null
-        ? {
-            id: (booking.serviceId as any)._id,
-            name: (booking.serviceId as any).serviceName,
-            description: (booking.serviceId as any).serviceDescription,
-            image: (booking.serviceId as any).image,
-            categoryId: (booking.serviceId as any).category,
-            categoryName: (booking.serviceId as any).category?.name || '',
-            reviews: (booking.serviceId as any).reviews || [],
-            
-          }
-        : null,
+      price:
+        typeof booking.serviceId === 'object' && booking.serviceId !== null
+          ? (booking.serviceId as any).price
+          : 0,
+      service:
+        typeof booking.serviceId === 'object' && booking.serviceId !== null
+          ? {
+              id: (booking.serviceId as any)._id,
+              name: (booking.serviceId as any).serviceName,
+              description: (booking.serviceId as any).serviceDescription,
+              image: (booking.serviceId as any).image,
+              categoryId: (booking.serviceId as any).category,
+              categoryName: (booking.serviceId as any).category?.name || '',
+              reviews: (booking.serviceId as any).reviews || [],
+            }
+          : null,
       user: booking.userId
         ? {
-            id:( booking.userId as any)._id,
+            id: (booking.userId as any)._id,
             name: (booking.userId as any).name,
             email: (booking.userId as any).email,
           }
@@ -372,22 +460,24 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
             isSubscribed: (booking.serviceProviderId as any).isSubscribed || false,
           }
         : null,
-      createdAt: (booking.createdAt),
+      createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
     }));
 
-    res.status(StatusCodes.OK).json({
+     res.status(StatusCodes.OK).json({
       success: true,
       data: formattedBookings,
     });
+    return;
   } catch (error) {
     console.error(error);
     const err = error as ApiError;
-    res.status(err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+     res.status(err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: err.message || 'Error fetching bookings',
       errorMessages: error,
     });
+    return;
   }
 };
 

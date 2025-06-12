@@ -1,14 +1,14 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { BookmarkService } from "./bookmark.service";
 
-const toggleBookmark = catchAsync(async(req: Request, res: Response)=>{
+const toggleBookmark = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user.id;
     const service = req.params.id;
-    const payload = { user, service }
-    const result = await BookmarkService.toggleBookmark(payload);
-    
+
+    const result = await BookmarkService.toggleBookmark(user, );
+
     sendResponse(res, {
         statusCode: 200,
         success: true,

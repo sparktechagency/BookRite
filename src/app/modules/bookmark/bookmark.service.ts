@@ -4,29 +4,53 @@ import { IBookmark } from "./bookmark.interface";
 import { Bookmark } from "./bookmark.model";
 import { JwtPayload } from "jsonwebtoken";
 import mongoose from "mongoose";
+import { NextFunction } from "express";
+import { Request, Response } from "express";
 
-const toggleBookmark = async (payload: JwtPayload): Promise<string> => {
+export const toggleBookmark = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const payload = req.body as JwtPayload;
 
-    // Check if the bookmark already exists
-    const existingBookmark:any = await Bookmark.findOne({
-        user: payload.user,
-        service: payload.service
+    if (!payload.user || !payload.service) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Missing user or service in request payload',
+      });
+    }
+
+    const existingBookmark: any = await Bookmark.findOne({
+      user: payload.user,
+      service: payload.service,
     });
 
     if (existingBookmark) {
-
-        // If the bookmark exists, delete it
-        await Bookmark.findByIdAndDelete(existingBookmark._id);
-        return "Bookmark Remove successfully";
+      await Bookmark.findByIdAndDelete(existingBookmark._id);
+       res.status(StatusCodes.OK).json({
+        success: true,
+        message: 'Bookmark removed successfully',
+      });
     } else {
+      const result = await Bookmark.create(payload);
+      if (!result) {
+         res.status(StatusCodes.EXPECTATION_FAILED).json({
+          success: false,
+          message: 'Failed to add bookmark',
+        });
+      }
 
-        // If the bookmark doesn't exist, create it
-        const result = await Bookmark.create(payload);
-        if (!result) {
-            throw new ApiError(StatusCodes.EXPECTATION_FAILED, "Failed to add bookmark");
-        }
-        return "Bookmark Added successfully";
+       res.status(StatusCodes.CREATED).json({
+        success: true,
+        message: 'Bookmark added successfully',
+      });
     }
+  } catch (error) {
+    console.error('Error in toggleBookmark:', error);
+     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'An error occurred while toggling the bookmark',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
 };
 
 // const toggleBookmark = async (payload: { user: string; service: string }): Promise<string> => {
@@ -54,6 +78,8 @@ const toggleBookmark = async (payload: JwtPayload): Promise<string> => {
 //     session.endSession();
 //   }
 // };
+
+
 const getBookmark = async (user: JwtPayload): Promise<IBookmark[]> => {
   const result = await Bookmark.find({ user: user?.id })
     .populate({

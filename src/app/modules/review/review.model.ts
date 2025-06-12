@@ -18,8 +18,9 @@ const reviewSchema = new Schema<IReview, ReviewModel>(
             required: true
         },
         rating: {
-            type: Number,
-            required: true
+            type: String,
+            required: true,
+            default: "0.0",
         },
 
     },

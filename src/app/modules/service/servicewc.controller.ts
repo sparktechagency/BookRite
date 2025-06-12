@@ -90,8 +90,10 @@ const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getHighestRated = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceWcServices.getHighestRatedServices();
+import { NextFunction } from 'express';
+
+const getHighestRated = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const result = await ServiceWcServices.getHighestRatedServices(req, res, next);
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,

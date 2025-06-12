@@ -8,7 +8,7 @@ import { Review } from '../review/review.model';
 import { User } from '../user/user.model';
 import { USER_ROLES } from '../../../enums/user';
 import { Bookmark } from '../bookmark/bookmark.model';
-
+import { Request, Response, NextFunction } from 'express';
 // const createServiceToDB = async (payload: IWcService) => {
 //   const { serviceName, serviceDescription, category ,image } = payload;
 
@@ -207,63 +207,69 @@ const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
   return processedServices;
 };
 
-const getHighestRatedServices = async (limit: number = 5) => {
-  // const { filter, search } = req.query;
 
-  let query = Servicewc.find()
-    .populate({
-      //location services
-      path: 'category',
-      select: 'CategoryName price image -_id User',
-      populate: {
+
+ const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 5;
+
+    let query = Servicewc.find()
+      .populate({
+        path: 'category',
+        select: 'CategoryName price image -_id User',
+        populate: {
+          path: 'User',
+          select: 'name',
+        },
+      })
+      .populate({
         path: 'User',
-        select: 'name',
-      },
-    })
-    .populate({
-      path: 'User',
-      select: 'name _id',
-    })
-    .sort({ createdAt: -1 });
+        select: 'name _id',
+      })
+      .sort({ createdAt: -1 })
+      .sort({ 'reviews.rating': -1 }) // this overrides the earlier sort, so keep only one if needed
+      .limit(limit);
 
-  query = query.sort({ 'reviews.rating': -1 }).limit(limit);
-  const services = await query.exec();
+    const services = await query.exec();
+
     const processedServices = services.map(service => {
-    const obj: any = service.toObject();
+      const obj: any = service.toObject();
 
-    // Rename User to serviceProvider
-    if (obj.User) {
-      obj.serviceProvider = obj.User;
-      delete obj.User;
-    }
+      // Rename User to serviceProvider
+      if (obj.User) {
+        obj.serviceProvider = obj.User;
+        delete obj.User;
+      }
 
-    obj.bookmarkCount = obj.Bookmark ? 1 : 0;
-    delete obj.Bookmark;
+      obj.bookmarkCount = obj.Bookmark ? 1 : 0;
+      delete obj.Bookmark;
 
-    // Calculate average rating from reviews
-    if (obj.reviews && obj.reviews.length > 0) {
-      const ratings = obj.reviews.map((r: any) => r.rating || 0);
-      const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
-      obj.rating = totalRating / ratings.length;
-    } else {
-      obj.rating = 0;
-    }
+      // Calculate average rating from reviews
+      if (obj.reviews && obj.reviews.length > 0) {
+        const ratings = obj.reviews.map((r: any) => r.rating || 0);
+        const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
+        obj.rating = totalRating / ratings.length;
+      } else {
+        obj.rating = 0;
+      }
 
-    return obj;
-  });
+      return obj;
+    });
 
-  // Rename User field to serviceProvider
-// const processedServices = services.map(service => {
-//   const obj = service.toObject();
-//   if (obj.User) {
-//     (obj as any).serviceProvider = obj.User;
-//     delete obj.User;
-//   }
-//   return obj;
-// });
-
-
-  return processedServices;
+    // ✅ Send response
+    return res.status(200).json({
+      success: true,
+      message: 'Top rated services retrieved successfully',
+      data: processedServices,
+    });
+  } catch (error) {
+    // ✅ Proper error response
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch top-rated services',
+      error: error instanceof Error ? error.message : error,
+    });
+  }
 };
 
 const updateServiceToDB = async (id: string, payload: IWcService) => {

@@ -10,7 +10,7 @@ import { IUser } from './user.interface';
 import { User } from './user.model';
 import bcrypt from 'bcrypt';
 import cron from 'node-cron';
-
+import fetch from 'node-fetch';
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   
   //set role
@@ -116,6 +116,34 @@ const getUserProfileFromDB = async (
 };
 
 
+// const updateProfileToDB = async (
+//   user: JwtPayload,
+//   payload: Partial<IUser>
+// ): Promise<Partial<IUser | null>> => {
+//   const { id } = user;
+//   const isExistUser = await User.isExistUserById(id);
+//   if (!isExistUser) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+//   }
+
+//   //unlink file here
+//   if (payload.profile) {
+//     if (isExistUser.profile) {
+//       unlinkFile(isExistUser.profile);
+//     }
+//   }
+
+//   const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {
+//     new: true,
+//   });
+
+//   return updateDoc;
+// };
+
+//resend otp
+
+
+
 const updateProfileToDB = async (
   user: JwtPayload,
   payload: Partial<IUser>
@@ -126,21 +154,36 @@ const updateProfileToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  //unlink file here
-  if (payload.profile) {
-    if (isExistUser.profile) {
-      unlinkFile(isExistUser.profile);
+  // Remove old profile image if replaced
+  if (payload.profile && isExistUser.profile) {
+    unlinkFile(isExistUser.profile);
+  }
+
+  // If location is passed as string, geocode it
+  if (payload as any && typeof (payload as any).location === 'string') {
+    const address = (payload as any).location;
+    const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`);
+    const geoData = await geoRes.json();
+
+    if (geoData.length > 0) {
+      const { lat, lon } = geoData[0];
+      payload.location = {
+        type: "Point",
+        coordinates: [parseFloat(lon), parseFloat(lat)]
+      };
+    } else {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid location provided");
     }
   }
 
-  const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {
+  const updatedDoc = await User.findOneAndUpdate({ _id: id }, payload, {
     new: true,
   });
 
-  return updateDoc;
+  return updatedDoc;
 };
 
-//resend otp
+
 const resendOtp = async (email: string): Promise<{ email: string }> => {
   const user = await User.findOne({ email });
   if (!user) {
