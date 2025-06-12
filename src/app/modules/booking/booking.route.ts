@@ -3,6 +3,7 @@ import { BookingController } from './booking.controller';
 import { USER_ROLES } from '../../../enums/user';
 import auth from '../../middlewares/auth';
 import validateRequest from '../../middlewares/validateRequest';
+import { checkSlotAvailability, getAvailability, getAvailabilityWithAllDays } from './aviliability.controller';
 
 const router = express.Router();
 
@@ -27,6 +28,14 @@ router.get('/location/:bookingId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN
 
 //cancelled bookings
 router.put('/cancelled/:bookingId', auth(USER_ROLES.ADMIN, USER_ROLES.USER), BookingController.cancelBooking);
+router.get('/checkAvilability/:serviceProviderId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),getAvailability);
+
+
+router.get(
+  '/dayaviliability',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  getAvailabilityWithAllDays
+);
 
 
 export default router;

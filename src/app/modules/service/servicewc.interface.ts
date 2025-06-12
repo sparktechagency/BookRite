@@ -11,6 +11,7 @@ export type IWcService = {
   price: number;
   category: Types.ObjectId; 
   location: string;
+  timeSlot?: string; 
   // User: Types.ObjectId;
   reviews: {
     findIndex(arg0: (review: any) => boolean): unknown;

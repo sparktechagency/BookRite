@@ -25,6 +25,7 @@ const bookingSchema = new Schema<IBooking>({
     type: Date, 
     required: true 
   },
+  timeSlot: { type: String, required: false }, 
 
   location: { type: String, required: true },
 

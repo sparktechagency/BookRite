@@ -8,6 +8,7 @@ export type IService = {
    price: number
    createdAt: Date;
    updatedAt: Date
+   
 }
 
 export type ServiceModel = Model<IService, Record<string, unknown>>

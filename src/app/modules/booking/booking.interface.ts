@@ -7,6 +7,7 @@ export interface IBooking {
     serviceProviderId?: string;
     price: number;
     bookingDate: Date; 
+    timeSlot?: string;
     status: 'Pending' | 'Accepted' | 'Completed' | 'Cancelled';
     paymentStatus: 'Pending' | 'Refunded' | 'Paid';
     location: string; 

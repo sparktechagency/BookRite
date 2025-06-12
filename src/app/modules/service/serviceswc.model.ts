@@ -46,6 +46,10 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
       type: String,
       required: true
     },
+    timeSlot: {
+      type: String,
+      required: false
+      },
   },
   { timestamps: true }
 )

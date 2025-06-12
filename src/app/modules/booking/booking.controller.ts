@@ -13,9 +13,14 @@ import { getIO } from '../../../helpers/socket';
 
 import { Notification } from "../notification/notification.model"; 
 import { USER_ROLES } from "../../../enums/user";
-// const createBooking = async (req: Request, res: Response): Promise<void> => {
+import { Availability } from "./aviliability.model";
+import { checkSlotAvailability } from "./aviliability.controller";
+
+
+
+// export const createBooking = async (req: Request, res: Response): Promise<void> => {
 //   try {
-//     const { serviceType, serviceId, bookingDate, location, images, contactNumber, serviceProviderId } = req.body;
+//     const { serviceId, bookingDate, location, images, contactNumber, serviceProviderId } = req.body;
 //     const userId = req.user?.id;
 
 //     if (!userId) {
@@ -23,7 +28,7 @@ import { USER_ROLES } from "../../../enums/user";
 //       return;
 //     }
 
-//     if (!serviceType || !serviceId || !bookingDate || !location || !contactNumber || !serviceProviderId) {
+//     if ( !serviceId || !bookingDate || !location || !contactNumber || !serviceProviderId) {
 //       res.status(400).json({
 //         success: false,
 //         message: 'Please provide all required fields: serviceType, serviceId, bookingDate, location, contactNumber, serviceProviderId',
@@ -44,7 +49,6 @@ import { USER_ROLES } from "../../../enums/user";
 //     }
 
 //     const newBooking = new Booking({
-//       serviceType,
 //       serviceId,
 //       userId,
 //       serviceProviderId,
@@ -56,10 +60,8 @@ import { USER_ROLES } from "../../../enums/user";
 
 //     await newBooking.save();
 
-//     // Create notification text (customize as needed)
 //     const notificationText = `New booking for ${service.serviceName} on ${new Date(bookingDate).toLocaleDateString()}`;
 
-//     // Create Notification document
 //     const notification = new Notification({
 //       text: notificationText,
 //       receiver: serviceProviderId,
@@ -72,15 +74,23 @@ import { USER_ROLES } from "../../../enums/user";
 
 //     await notification.save();
 
-//     // Reload notification to get createdAt field
 //     const savedNotification = await Notification.findById(notification._id);
 
-//     io.to(serviceProviderId.toString()).emit('new_notification', {
-//       notificationId: notification._id,
-//       text: notificationText,
-//       bookingId: newBooking._id,
-//       createdAt: savedNotification ? (savedNotification as any).createdAt : undefined,
-//     });
+//     // Emit notification to the serviceProvider room (userId)
+//     // const io = getIO();
+//     // io.to(serviceProviderId.toString()).emit('new_notification', {
+//     //   notificationId: notification._id,
+//     //   text: notificationText,
+//     //   bookingId: newBooking._id,
+//     //   createdAt: savedNotification ? (savedNotification as any).createdAt : undefined,
+//     // });
+//     const io = getIO();
+//       io.emit(`notification::${userId}`, {
+//         text: notificationText,
+//         type: "Booking",
+//         booking: newBooking,
+//         createdAt: savedNotification ? (savedNotification as any).createdAt : undefined
+//       });
 
 //     res.status(201).json({
 //       success: true,
@@ -99,20 +109,39 @@ import { USER_ROLES } from "../../../enums/user";
 //     });
 //   }
 // };
-export const createBooking = async (req: Request, res: Response): Promise<void> => {
+
+ export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { serviceId, bookingDate, location, images, contactNumber, serviceProviderId } = req.body;
+    const { serviceId, bookingDate, location, images, contactNumber, serviceProviderId, timeSlot } = req.body;
     const userId = req.user?.id;
+
+    console.log('Creating booking with data:', {
+      serviceId,
+      bookingDate,
+      serviceProviderId,
+      timeSlot,
+      userId
+    });
 
     if (!userId) {
       res.status(401).json({ success: false, message: 'Unauthorized: User not found in token' });
       return;
     }
 
-    if ( !serviceId || !bookingDate || !location || !contactNumber || !serviceProviderId) {
+    if (!serviceId || !bookingDate || !location || !contactNumber || !serviceProviderId || !timeSlot) {
       res.status(400).json({
         success: false,
-        message: 'Please provide all required fields: serviceType, serviceId, bookingDate, location, contactNumber, serviceProviderId',
+        message: 'Please provide all required fields: serviceId, bookingDate, location, contactNumber, serviceProviderId, timeSlot',
+      });
+      return;
+    }
+
+    // Validate time slot format
+    const validTimeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+    if (!validTimeSlots.includes(timeSlot)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid time slot. Valid slots are: ' + validTimeSlots.join(', ')
       });
       return;
     }
@@ -129,49 +158,71 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
+    const parsedBookingDate = new Date(bookingDate);
+    
+    // Check if the booking date is in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (parsedBookingDate < today) {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot book for past dates'
+      });
+      return;
+    }
+
+    // Check availability based on existing bookings
+    const isSlotAvailable = await checkSlotAvailability(serviceProviderId, parsedBookingDate, timeSlot);
+
+    if (!isSlotAvailable) {
+      res.status(400).json({
+        success: false,
+        message: 'Selected time slot is not available. Please choose another time.',
+        debug: {
+          requestedDate: parsedBookingDate.toISOString().split('T')[0],
+          requestedTimeSlot: timeSlot,
+          serviceProviderId
+        }
+      });
+      return;
+    }
+
     const newBooking = new Booking({
       serviceId,
       userId,
       serviceProviderId,
-      bookingDate,
+      bookingDate: parsedBookingDate,
+      timeSlot,
       location,
       contactNumber,
-      images: images || [],
+
+      status: 'Pending' 
     });
 
     await newBooking.save();
 
-    const notificationText = `New booking for ${service.serviceName} on ${new Date(bookingDate).toLocaleDateString()}`;
+    const notificationText = `New booking for ${service.serviceName} on ${parsedBookingDate.toLocaleDateString()} at ${timeSlot}`;
 
     const notification = new Notification({
       text: notificationText,
       receiver: serviceProviderId,
       sender: userId,
       referenceId: newBooking._id.toString(),
-      screen: 'OFFER',    
+      screen: 'OFFER',
       read: false,
       type: 'ADMIN',
     });
 
     await notification.save();
-
     const savedNotification = await Notification.findById(notification._id);
 
-    // Emit notification to the serviceProvider room (userId)
-    // const io = getIO();
-    // io.to(serviceProviderId.toString()).emit('new_notification', {
-    //   notificationId: notification._id,
-    //   text: notificationText,
-    //   bookingId: newBooking._id,
-    //   createdAt: savedNotification ? (savedNotification as any).createdAt : undefined,
-    // });
     const io = getIO();
-      io.emit(`notification::${userId}`, {
-        text: notificationText,
-        type: "Booking",
-        booking: newBooking,
-        createdAt: savedNotification ? (savedNotification as any).createdAt : undefined
-      });
+    io.emit(`notification::${userId}`, {
+      text: notificationText,
+      type: "Booking",
+      booking: newBooking,
+      createdAt: savedNotification ? (savedNotification as any).createdAt : undefined
+    });
 
     res.status(201).json({
       success: true,
@@ -182,7 +233,7 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       },
     });
   } catch (error: any) {
-    console.error(error);
+    console.error('Error creating booking:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating booking',
@@ -807,9 +858,6 @@ export const cancelBooking = async (req: Request, res: Response): Promise<void> 
 
 
 
-
-
-
 export const BookingController = {
   createBooking,
   getUserBookings,
@@ -824,8 +872,9 @@ export const BookingController = {
   getMonthlyEarnings,
   getBookingLocation,
   cancelBooking,
+
+
   
 };
-    function next() {
-        throw new Error("Function not implemented.");
-    }
+
+
