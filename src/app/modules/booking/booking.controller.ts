@@ -109,8 +109,7 @@ import { checkSlotAvailability } from "./aviliability.controller";
 //     });
 //   }
 // };
-
- export const createBooking = async (req: Request, res: Response): Promise<void> => {
+export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
     const { serviceId, bookingDate, location, images, contactNumber, serviceProviderId, timeSlot } = req.body;
     const userId = req.user?.id;
@@ -136,19 +135,36 @@ import { checkSlotAvailability } from "./aviliability.controller";
       return;
     }
 
-    // Validate time slot format
-    const validTimeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
-    if (!validTimeSlots.includes(timeSlot)) {
+    const validTimeSlots = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+
+    if (Array.isArray(timeSlot)) {
+      for (const slot of timeSlot) {
+        if (!validTimeSlots.includes(slot)) {
+          res.status(400).json({
+            success: false,
+            message: `Invalid time slot: ${slot}. Valid slots are: ` + validTimeSlots.join(', '),
+          });
+          return;
+        }
+      }
+    } else {
       res.status(400).json({
         success: false,
-        message: 'Invalid time slot. Valid slots are: ' + validTimeSlots.join(', ')
+        message: 'Time slot should be an array of valid time slots.',
       });
       return;
     }
-
     const serviceProvider = await User.findById(serviceProviderId);
-    if (!serviceProvider || serviceProvider.role !== 'ADMIN') {
-      res.status(400).json({ success: false, message: 'Service provider must be an admin' });
+    if (!serviceProvider) {
+      res.status(404).json({ success: false, message: 'Service provider not found' });
+      return;
+    }
+
+    if (!['ADMIN', 'SERVICE_PROVIDER'].includes(serviceProvider.role)) {
+      res.status(400).json({ 
+        success: false, 
+        message: `User with role ${serviceProvider.role} cannot provide services` 
+      });
       return;
     }
 
@@ -160,7 +176,6 @@ import { checkSlotAvailability } from "./aviliability.controller";
 
     const parsedBookingDate = new Date(bookingDate);
     
-    // Check if the booking date is in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (parsedBookingDate < today) {
@@ -171,64 +186,89 @@ import { checkSlotAvailability } from "./aviliability.controller";
       return;
     }
 
-    // Check availability based on existing bookings
-    const isSlotAvailable = await checkSlotAvailability(serviceProviderId, parsedBookingDate, timeSlot);
+    for (const slot of timeSlot) {
+      const isSlotAvailable = await checkSlotAvailability(serviceProviderId, parsedBookingDate, slot);
 
-    if (!isSlotAvailable) {
-      res.status(400).json({
-        success: false,
-        message: 'Selected time slot is not available. Please choose another time.',
-        debug: {
-          requestedDate: parsedBookingDate.toISOString().split('T')[0],
-          requestedTimeSlot: timeSlot,
-          serviceProviderId
-        }
-      });
-      return;
+      if (!isSlotAvailable) {
+        res.status(400).json({
+          success: false,
+          message: `Selected time slot ${slot} is not available. Please choose another time.`,
+          debug: {
+            requestedDate: parsedBookingDate.toISOString().split('T')[0],
+            requestedTimeSlot: slot,
+            serviceProviderId
+          }
+        });
+        return;
+      }
     }
 
-    const newBooking = new Booking({
-      serviceId,
-      userId,
-      serviceProviderId,
-      bookingDate: parsedBookingDate,
-      timeSlot,
-      location,
-      contactNumber,
+    const newBookingIds = [];
 
-      status: 'Pending' 
-    });
+    for (const slot of timeSlot) {
+      const newBooking = new Booking({
+        serviceId,
+        userId,
+        serviceProviderId,
+        bookingDate: parsedBookingDate,
+        timeSlot: slot,
+        location,
+        contactNumber,
+        images: images || [],
+        status: 'Pending'
+      });
 
-    await newBooking.save();
+      const savedBooking = await newBooking.save();
+      newBookingIds.push(savedBooking._id);
 
-    const notificationText = `New booking for ${service.serviceName} on ${parsedBookingDate.toLocaleDateString()} at ${timeSlot}`;
+      const notificationText = `New booking for ${service.serviceName} on ${parsedBookingDate.toLocaleDateString()} at ${slot}`;
 
-    const notification = new Notification({
-      text: notificationText,
-      receiver: serviceProviderId,
-      sender: userId,
-      referenceId: newBooking._id.toString(),
-      screen: 'OFFER',
-      read: false,
-      type: 'ADMIN',
-    });
+      const notification = new Notification({
+        text: notificationText,
+        receiver: serviceProviderId,
+        sender: userId,
+        referenceId: savedBooking._id.toString(),
+        screen: 'OFFER',
+        read: false,
+        type: 'ADMIN',
+      });
 
-    await notification.save();
-    const savedNotification = await Notification.findById(notification._id);
+      await notification.save();
 
-    const io = getIO();
-    io.emit(`notification::${userId}`, {
-      text: notificationText,
-      type: "Booking",
-      booking: newBooking,
-      createdAt: savedNotification ? (savedNotification as any).createdAt : undefined
-    });
+      const io = getIO();
+      io.emit(`notification::${serviceProviderId}`, { 
+        text: notificationText,
+        type: "Booking",
+        booking: savedBooking,
+        createdAt: notification.createdAt
+      });
+
+      const targetDate = new Date(parsedBookingDate);
+      targetDate.setUTCHours(0, 0, 0, 0);
+
+      await Availability.updateOne(
+        {
+          serviceProviderId,
+          date: {
+            $gte: targetDate,
+            $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
+          },
+          'timeSlots.startTime': slot
+        },
+        {
+          $set: {
+            'timeSlots.$.isBooked': true,
+            'timeSlots.$.bookingId': savedBooking._id
+          }
+        }
+      );
+    }
 
     res.status(201).json({
       success: true,
-      message: 'Booking created successfully',
+      message: 'Bookings created successfully',
       data: {
-        booking: newBooking,
+        bookingIds: newBookingIds,
         price: service.price,
       },
     });
@@ -241,6 +281,152 @@ import { checkSlotAvailability } from "./aviliability.controller";
     });
   }
 };
+
+// export const createBooking = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const { serviceId, bookingDate, location, images, contactNumber, serviceProviderId, timeSlot } = req.body;
+//     const userId = req.user?.id;
+
+//     console.log('Creating booking with data:', {
+//       serviceId,
+//       bookingDate,
+//       serviceProviderId,
+//       timeSlot,
+//       userId
+//     });
+
+//     // Validation checks
+//     if (!userId) {
+//       res.status(401).json({ success: false, message: 'Unauthorized: User not found in token' });
+//       return;
+//     }
+
+//     if (!serviceId || !bookingDate || !location || !contactNumber || !serviceProviderId || !timeSlot) {
+//       res.status(400).json({
+//         success: false,
+//         message: 'Please provide all required fields: serviceId, bookingDate, location, contactNumber, serviceProviderId, timeSlot',
+//       });
+//       return;
+//     }
+
+//     // Validate time slot format
+//     const validTimeSlots = ["09:00", "10:00", "11:00","12:00",  "13:00", "14:00", "15:00", "16:00", "17:00"];
+//     if (!validTimeSlots.includes(timeSlot)) {
+//       res.status(400).json({
+//         success: false,
+//         message: 'Invalid time slot. Valid slots are: ' + validTimeSlots.join(', ')
+//       });
+//       return;
+//     }
+
+//     // Check if service provider exists and validate their role
+//     const serviceProvider = await User.findById(serviceProviderId);
+//     if (!serviceProvider) {
+//       res.status(404).json({ success: false, message: 'Service provider not found' });
+//       return;
+//     }
+
+//     // Allow both ADMIN and SERVICE_PROVIDER roles (adjust as per your business logic)
+//     if (!['ADMIN', 'SERVICE_PROVIDER'].includes(serviceProvider.role)) {
+//       res.status(400).json({ 
+//         success: false, 
+//         message: `User with role ${serviceProvider.role} cannot provide services` 
+//       });
+//       return;
+//     }
+
+//     // Check if service exists
+//     const service = await Servicewc.findById(serviceId);
+//     if (!service) {
+//       res.status(404).json({ success: false, message: 'Service not found' });
+//       return;
+//     }
+
+//     const parsedBookingDate = new Date(bookingDate);
+    
+//     // Check if the booking date is in the past
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
+//     if (parsedBookingDate < today) {
+//       res.status(400).json({
+//         success: false,
+//         message: 'Cannot book for past dates'
+//       });
+//       return;
+//     }
+
+//     // Check availability
+//     const isSlotAvailable = await checkSlotAvailability(serviceProviderId, parsedBookingDate, timeSlot);
+
+//     if (!isSlotAvailable) {
+//       res.status(400).json({
+//         success: false,
+//         message: 'Selected time slot is not available. Please choose another time.',
+//         debug: {
+//           requestedDate: parsedBookingDate.toISOString().split('T')[0],
+//           requestedTimeSlot: timeSlot,
+//           serviceProviderId
+//         }
+//       });
+//       return;
+//     }
+
+//     // Create the booking
+//     const newBooking = new Booking({
+//       serviceId,
+//       userId,
+//       serviceProviderId,
+//       bookingDate: parsedBookingDate,
+//       timeSlot,
+//       location,
+//       contactNumber,
+//       images: images || [],
+//       status: 'Pending'
+//     });
+
+//     await newBooking.save();
+
+//     // Create notification
+//     const notificationText = `New booking for ${service.serviceName} on ${parsedBookingDate.toLocaleDateString()} at ${timeSlot}`;
+
+//     const notification = new Notification({
+//       text: notificationText,
+//       receiver: serviceProviderId,
+//       sender: userId,
+//       referenceId: newBooking._id.toString(),
+//       screen: 'OFFER',
+//       read: false,
+//       type: 'ADMIN',
+//     });
+
+//     await notification.save();
+
+//     // Emit socket notification
+//     const io = getIO();
+//     io.emit(`notification::${serviceProviderId}`, { // Changed from userId to serviceProviderId
+//       text: notificationText,
+//       type: "Booking",
+//       booking: newBooking,
+//       createdAt: notification.createdAt
+//     });
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Booking created successfully',
+//       data: {
+//         booking: newBooking,
+//         price: service.price,
+//       },
+//     });
+//   } catch (error: any) {
+//     console.error('Error creating booking:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Error creating booking',
+//       errorMessages: error.message || error,
+//     });
+//   }
+// };
 
 const getBookingById = async (bookingId: string) => {
  const booking = await Booking.findById(bookingId)

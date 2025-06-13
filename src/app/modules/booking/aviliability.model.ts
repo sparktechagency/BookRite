@@ -1,54 +1,64 @@
-import mongoose, { Schema, Document } from 'mongoose';
 
-interface IAvailability extends Document {
-  serviceProviderId: mongoose.Types.ObjectId;
-  date: Date;
-  timeSlots: {
-    startTime: string; // "09:00"
-    endTime: string;   // "10:00"
-    isBooked: boolean;
-    bookingId?: mongoose.Types.ObjectId;
-  }[];
-  isAvailable: boolean;
+import { Model, model, Schema, Types } from 'mongoose';
+
+// Interface for time slots
+interface ITimeSlot {
+  startTime: string;
+  endTime: string;
+  isBooked: boolean;
+  bookingId?: Types.ObjectId | null;
 }
 
-const availabilitySchema = new Schema<IAvailability>({
-  serviceProviderId: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+// Interface for availability document
+interface IAvailability {
+  serviceProviderId: Types.ObjectId;
+  date: Date;
+  timeSlots: ITimeSlot[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Availability model interface
+interface AvailabilityModel extends Model<IAvailability> {}
+
+const timeSlotSchema = new Schema<ITimeSlot>({
+  startTime: {
+    type: String,
+    required: true,
   },
-  date: {
-    type: Date,
-    required: true
+  endTime: {
+    type: String,
+    required: true,
   },
-  timeSlots: [{
-    startTime: {
-      type: String,
-      required: true
-    },
-    endTime: {
-      type: String,
-      required: true
-    },
-    isBooked: {
-      type: Boolean,
-      default: false
-    },
-    bookingId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Booking'
-    }
-  }],
-  isAvailable: {
+  isBooked: {
     type: Boolean,
-    default: true
+    default: false,
+  },
+  bookingId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Booking',
+    default: null,
   }
-}, {
-  timestamps: true
 });
 
-// Compound index for efficient queries
+const availabilitySchema = new Schema<IAvailability, AvailabilityModel>(
+  {
+    serviceProviderId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+    },
+    timeSlots: [timeSlotSchema],
+  },
+  { timestamps: true }
+);
+
+// Create compound index for efficient queries
 availabilitySchema.index({ serviceProviderId: 1, date: 1 });
 
-export const Availability = mongoose.model<IAvailability>('Availability', availabilitySchema);
+export const Availability = model<IAvailability, AvailabilityModel>('Availability', availabilitySchema);
+export { IAvailability, ITimeSlot };
