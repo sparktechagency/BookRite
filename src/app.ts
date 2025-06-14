@@ -14,7 +14,7 @@ app.get('/', (req, res) => {
   res.send('Server is running');
 });
 
-app.post('/api/v1/webhook', express.raw({ type: 'application/json' }), PaymentController.handleStripeWebhooks);
+app.post('/api/v1/webhook', express.raw({ type: 'application/json' }), PaymentController.handleStripeWebhooks); //this are the userwebhooks
 
 app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res, next) => {
   try {

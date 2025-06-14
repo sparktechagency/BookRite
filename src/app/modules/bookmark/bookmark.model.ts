@@ -23,5 +23,6 @@ const bookmarkSchema = new Schema<IBookmark, BookmarkModel>(
         timestamps: true
     }
 );
+bookmarkSchema.index({ user: 1, service: 1 }, { unique: true });
 
 export const Bookmark = model<IBookmark, BookmarkModel>("Bookmark", bookmarkSchema);

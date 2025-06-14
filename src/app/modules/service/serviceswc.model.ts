@@ -29,7 +29,7 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
       type: [{
         user: { type: Schema.Types.ObjectId, ref: 'User' },
         comment: { type: String, required: false },
-        rating: { type: Number, required: false },
+        rating: { type: String, required: false },
         createdAt: { type: Date, default: Date.now }
       }],
       default: []

@@ -77,9 +77,9 @@ const createServiceToDB = async (payload: IWcService, userId: string): Promise<I
 //   return result;
 // };
 
-
 const getServicesFromDB = async (req: any) => {
   const { filter, search } = req.query;
+  const userId = req.user?.id; // ✅ Get current user ID
 
   let query = Servicewc.find()
     .populate({
@@ -96,47 +96,58 @@ const getServicesFromDB = async (req: any) => {
     })
     .sort({ createdAt: -1 });
 
-  // ... (keep your existing search and filter logic)
+  // TODO: Apply filters/search here if needed
 
   const services = await query.exec();
 
-  // Get all service IDs for bookmark counting
   const serviceIds = services.map(service => service._id);
 
-  // Count bookmarks for all services in one query
+  // Bookmark counts (for everyone)
   const bookmarkCounts = await Bookmark.aggregate([
     {
-      $match: {
-        service: { $in: serviceIds }
-      }
+      $match: { service: { $in: serviceIds } },
     },
     {
       $group: {
         _id: "$service",
-        count: { $sum: 1 }
-      }
-    }
+        count: { $sum: 1 },
+      },
+    },
   ]);
-
-  // Convert to a map for easy lookup
   const bookmarkCountMap = new Map(
     bookmarkCounts.map(item => [item._id.toString(), item.count])
   );
 
-  // Process each service
+  // ✅ Find which services the current user bookmarked
+  let userBookmarkedIds = new Set<string>();
+  if (userId) {
+    const userBookmarks = await Bookmark.find({
+      user: userId,
+      service: { $in: serviceIds },
+    }).select('service');
+
+    userBookmarkedIds = new Set(
+      userBookmarks.map(b => b.service.toString())
+    );
+  }
+
+  // Build final response
   const processedServices = services.map(service => {
     const obj: any = service.toObject();
 
-    // Rename User to serviceProvider
+    // Rename
     if (obj.User) {
       obj.serviceProvider = obj.User;
       delete obj.User;
     }
 
-    // Get bookmark count from our map (default to 0 if not found)
+    // Bookmark count
     obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
 
-    // Calculate average rating from reviews
+    // ✅ Add bookmark: true/false
+    obj.bookmark = userBookmarkedIds.has(service._id.toString());
+
+    // Rating
     if (obj.reviews && obj.reviews.length > 0) {
       const ratings = obj.reviews.map((r: any) => r.rating || 0);
       const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
@@ -150,6 +161,79 @@ const getServicesFromDB = async (req: any) => {
 
   return processedServices;
 };
+
+// const getServicesFromDB = async (req: any) => {
+//   const { filter, search } = req.query;
+
+//   let query = Servicewc.find()
+//     .populate({
+//       path: 'category',
+//       select: 'CategoryName price image -_id User',
+//       populate: {
+//         path: 'User',
+//         select: 'name',
+//       },
+//     })
+//     .populate({
+//       path: 'User',
+//       select: 'name _id',
+//     })
+//     .sort({ createdAt: -1 });
+
+//   // ... (keep your existing search and filter logic)
+
+//   const services = await query.exec();
+
+//   // Get all service IDs for bookmark counting
+//   const serviceIds = services.map(service => service._id);
+
+//   // Count bookmarks for all services in one query
+//   const bookmarkCounts = await Bookmark.aggregate([
+//     {
+//       $match: {
+//         service: { $in: serviceIds }
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: "$service",
+//         count: { $sum: 1 }
+//       }
+//     }
+//   ]);
+
+//   // Convert to a map for easy lookup
+//   const bookmarkCountMap = new Map(
+//     bookmarkCounts.map(item => [item._id.toString(), item.count])
+//   );
+
+//   // Process each service
+//   const processedServices = services.map(service => {
+//     const obj: any = service.toObject();
+
+//     // Rename User to serviceProvider
+//     if (obj.User) {
+//       obj.serviceProvider = obj.User;
+//       delete obj.User;
+//     }
+
+//     // Get bookmark count from our map (default to 0 if not found)
+//     obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
+
+//     // Calculate average rating from reviews
+//     if (obj.reviews && obj.reviews.length > 0) {
+//       const ratings = obj.reviews.map((r: any) => r.rating || 0);
+//       const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
+//       obj.rating = totalRating / ratings.length;
+//     } else {
+//       obj.rating = 0;
+//     }
+
+//     return obj;
+//   });
+
+//   return processedServices;
+// };
 
 const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
   const { filter, search } = req.query;
@@ -209,9 +293,73 @@ const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
 
 
 
- const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
+//  const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const limit = parseInt(req.query.limit as string) || 5;
+
+//     let query = Servicewc.find()
+//       .populate({
+//         path: 'category',
+//         select: 'CategoryName price image -_id User',
+//         populate: {
+//           path: 'User',
+//           select: 'name',
+//         },
+//       })
+//       .populate({
+//         path: 'User',
+//         select: 'name _id',
+//       })
+//       .sort({ createdAt: -1 })
+//       .sort({ 'reviews.rating': -1 }) // this overrides the earlier sort, so keep only one if needed
+//       .limit(limit);
+
+//     const services = await query.exec();
+
+//     const processedServices = services.map(service => {
+//       const obj: any = service.toObject();
+
+//       // Rename User to serviceProvider
+//       if (obj.User) {
+//         obj.serviceProvider = obj.User;
+//         delete obj.User;
+//       }
+
+//       obj.bookmarkCount = obj.Bookmark ? 1 : 0;
+//       delete obj.Bookmark;
+
+//       // Calculate average rating from reviews
+//       if (obj.reviews && obj.reviews.length > 0) {
+//         const ratings = obj.reviews.map((r: any) => r.rating || 0);
+//         const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
+//         obj.rating = totalRating / ratings.length;
+//       } else {
+//         obj.rating = 0;
+//       }
+
+//       res.send(obj);
+//     });
+
+//     // ✅ Send response
+//      res.status(200).json({
+//       success: true,
+//       message: 'Top rated services retrieved successfully',
+//       data: processedServices,
+//     });
+//   } catch (error) {
+//     // ✅ Proper error response
+//      res.status(500).json({
+//       success: false,
+//       message: 'Failed to fetch top-rated services',
+//       error: error instanceof Error ? error.message : error,
+//     });
+//   }
+// };
+
+const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const limit = parseInt(req.query.limit as string) || 5;
+    const userId = req.user?.id; 
 
     let query = Servicewc.find()
       .populate({
@@ -225,52 +373,84 @@ const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
       .populate({
         path: 'User',
         select: 'name _id',
-      })
-      .sort({ createdAt: -1 })
-      .sort({ 'reviews.rating': -1 }) // this overrides the earlier sort, so keep only one if needed
-      .limit(limit);
+      });
 
     const services = await query.exec();
 
-    const processedServices = services.map(service => {
+    const servicesWithRating = services.map(service => {
       const obj: any = service.toObject();
 
-      // Rename User to serviceProvider
       if (obj.User) {
         obj.serviceProvider = obj.User;
         delete obj.User;
       }
 
-      obj.bookmarkCount = obj.Bookmark ? 1 : 0;
-      delete obj.Bookmark;
-
-      // Calculate average rating from reviews
+      let rating = 0;
       if (obj.reviews && obj.reviews.length > 0) {
         const ratings = obj.reviews.map((r: any) => r.rating || 0);
         const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
-        obj.rating = totalRating / ratings.length;
-      } else {
-        obj.rating = 0;
+        rating = totalRating / ratings.length;
       }
+
+      obj.rating = rating;
+      return obj;
+    });
+    const sortedServices = servicesWithRating
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, limit);
+
+    const serviceIds = sortedServices.map(s => s._id);
+
+    const bookmarkCounts = await Bookmark.aggregate([
+      {
+        $match: { service: { $in: serviceIds } },
+      },
+      {
+        $group: {
+          _id: "$service",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const bookmarkCountMap = new Map(
+      bookmarkCounts.map(item => [item._id.toString(), item.count])
+    );
+
+    let userBookmarkedIds = new Set<string>();
+    if (userId) {
+      const userBookmarks = await Bookmark.find({
+        user: userId,
+        service: { $in: serviceIds },
+      }).select('service');
+
+      userBookmarkedIds = new Set(
+        userBookmarks.map(b => b.service.toString())
+      );
+    }
+
+    const processedServices = sortedServices.map(service => {
+      const obj: any = service;
+
+      obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
+      obj.bookmark = userBookmarkedIds.has(service._id.toString());
 
       return obj;
     });
-
-    // ✅ Send response
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       message: 'Top rated services retrieved successfully',
       data: processedServices,
     });
   } catch (error) {
-    // ✅ Proper error response
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: 'Failed to fetch top-rated services',
       error: error instanceof Error ? error.message : error,
     });
   }
 };
+
 
 const updateServiceToDB = async (id: string, payload: IWcService) => {
   const existingService = await Servicewc.findById(id);

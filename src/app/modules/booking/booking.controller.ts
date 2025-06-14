@@ -228,7 +228,7 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
         receiver: serviceProviderId,
         sender: userId,
         referenceId: savedBooking._id.toString(),
-        screen: 'OFFER',
+        screen: 'BOOKING',
         read: false,
         type: 'ADMIN',
       });
@@ -428,17 +428,19 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
 //   }
 // };
 
-const getBookingById = async (bookingId: string) => {
- const booking = await Booking.findById(bookingId)
-  .sort({ createdAt: -1 })
- .populate('userId', 'name email contactNumber');
+const getBookingById = async (req: Request, res: Response): Promise<void> => {
+  const { bookingId } = req.params;
+
+  const booking = await Booking.findById(bookingId)
+    .sort({ createdAt: -1 })
+    .populate('userId', 'name email contactNumber');
 
   if (!booking) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
   }
 
-  return booking;
-};  
+  res.json(booking);
+};
 
 const updateBookingStatus = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -579,6 +581,7 @@ const updateBookingStatus = async (req: Request, res: Response): Promise<void> =
 const getUserBookings = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?._id;
+    //;
     if (!userId) {
       res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
@@ -666,6 +669,99 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 };
+//get all bookings byId
+const getUserBookingsById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.userId;
+
+    if (!userId) {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Missing userId in route parameter',
+      });
+      return;
+    }
+
+    const bookings = await Booking.find({ userId })
+      .sort({ createdAt: -1 })
+      .populate('serviceProviderId')
+      .populate('serviceId', 'serviceName serviceDescription image category price location reviews')
+      .populate('userId', 'reviews name email contactNumber')
+      .exec();
+
+    if (!bookings || bookings.length === 0) {
+      res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'No bookings found for this user.',
+      });
+      return;
+    }
+
+
+  const formattedBookings = bookings.map(booking => ({
+      bookingId: booking._id,
+      serviceType: booking.serviceType,
+      bookingDate: booking.bookingDate,
+      location: booking.location,
+      contactNumber: booking.contactNumber,
+      status: booking.status,
+      paymentStatus: booking.paymentStatus,
+      images: booking.images || [],
+      price:
+        typeof booking.serviceId === 'object' && booking.serviceId !== null
+          ? (booking.serviceId as any).price
+          : 0,
+      service:
+        typeof booking.serviceId === 'object' && booking.serviceId !== null
+          ? {
+              id: (booking.serviceId as any)._id,
+              name: (booking.serviceId as any).serviceName,
+              description: (booking.serviceId as any).serviceDescription,
+              image: (booking.serviceId as any).image,
+              categoryId: (booking.serviceId as any).category,
+              categoryName: (booking.serviceId as any).category?.name || '',
+              reviews: (booking.serviceId as any).reviews || [],
+            }
+          : null,
+      user: booking.userId
+        ? {
+            id: (booking.userId as any)._id,
+            name: (booking.userId as any).name,
+            email: (booking.userId as any).email,
+          }
+        : null,
+      serviceProvider: booking.serviceProviderId
+        ? {
+            id: (booking.serviceProviderId as any)._id,
+            name: (booking.serviceProviderId as any).name,
+            email: (booking.serviceProviderId as any).email,
+            role: (booking.serviceProviderId as any).role,
+            profile: (booking.serviceProviderId as any).profile,
+            verified: (booking.serviceProviderId as any).verified,
+            accountStatus: (booking.serviceProviderId as any).accountInformation?.status || false,
+            isSubscribed: (booking.serviceProviderId as any).isSubscribed || false,
+          }
+        : null,
+      createdAt: booking.createdAt,
+      updatedAt: booking.updatedAt,
+    }));
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: formattedBookings,
+    });
+  } catch (error) {
+    console.error(error);
+    const err = error as ApiError;
+    res.status(err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: err.message || 'Error fetching bookings',
+      errorMessages: error,
+    });
+  }
+};
+;
+
 
 //get all bookings
 export const getAllBookings = async (req: Request, res: Response) => {
@@ -1132,6 +1228,186 @@ export const cancelBooking = async (req: Request, res: Response): Promise<void> 
   }
 };
 
+//get serviceprovider own information
+export const getUserEarnings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.params.userId || req.query.userId;
+    const year = Number(req.query.year) || new Date().getFullYear();
+
+    if (!userId) {
+       res.status(StatusCodes.BAD_REQUEST).json({
+        status: "error",
+        message: "Missing userId in query or params",
+      });
+    }
+
+    const startOfYear = new Date(`${year}-01-01T00:00:00Z`);
+    const startOfNextYear = new Date(`${year + 1}-01-01T00:00:00Z`);
+
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+    // 1. Monthly earnings aggregation
+    const monthlyAggregation = await Booking.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid",
+          serviceProviderId: new mongoose.Types.ObjectId(
+            Array.isArray(userId)
+              ? String(userId[0])
+              : typeof userId === 'object'
+                ? String((userId as any).toString ? (userId as any).toString() : '')
+                : String(userId)
+          ),
+          createdAt: {
+            $gte: startOfYear,
+            $lt: startOfNextYear,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { month: { $month: "$createdAt" } },
+          totalEarnings: { $sum: "$price" },
+        },
+      },
+    ]);
+
+    //tips
+    const tipsAggregation = await Booking.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid",
+          serviceProviderId: new mongoose.Types.ObjectId(
+            Array.isArray(userId)
+              ? String(userId[0])
+              : typeof userId === 'object'
+                ? String((userId as any).toString ? (userId as any).toString() : '')
+                : String(userId)
+          ),
+          createdAt: {
+            $gte: startOfYear,
+            $lt: startOfNextYear,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalTips: { $sum: "$tip" },
+        },
+      },
+    ]);
+
+    // 2. Today's earnings aggregation
+    const todayAggregation = await Booking.aggregate([
+      {
+        $match: {
+          paymentStatus: "paid",
+          serviceProviderId: new mongoose.Types.ObjectId( Array.isArray(userId)
+              ? String(userId[0])
+              : typeof userId === 'object'
+                ? String((userId as any).toString ? (userId as any).toString() : '')
+                : String(userId)),
+          createdAt: {
+            $gte: startOfToday,
+            $lt: endOfToday,
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalEarnings: { $sum: "$price" },
+        },
+      },
+    ]);
+
+    const months = [
+      { month: "Jan", earnings: 0 },
+      { month: "Feb", earnings: 0 },
+      { month: "Mar", earnings: 0 },
+      { month: "Apr", earnings: 0 },
+      { month: "May", earnings: 0 },
+      { month: "Jun", earnings: 0 },
+      { month: "Jul", earnings: 0 },
+      { month: "Aug", earnings: 0 },
+      { month: "Sept", earnings: 0 },
+      { month: "Oct", earnings: 0 },
+      { month: "Nov", earnings: 0 },
+      { month: "Dec", earnings: 0 },
+    ];
+
+    monthlyAggregation.forEach(({ _id, totalEarnings }) => {
+      const index = _id.month - 1;
+      if (index >= 0 && index < 12) {
+        months[index].earnings = totalEarnings;
+      }
+    });
+
+    const totalEarnings = months.reduce((sum, m) => sum + m.earnings, 0);
+    const todayEarnings = todayAggregation[0]?.totalEarnings || 0;
+    const totalTips = tipsAggregation[0]?.totalTips || 0;
+
+    res.status(StatusCodes.OK).json({
+      status: "success",
+      data: {
+        year,
+        // monthlyEarnings: months,
+        totalEarnings,
+        todayEarnings,
+        totalTips,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error in getUserEarnings:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: error.message || "Internal server error",
+    });
+  }
+};
+
+//total services status waised count like pending, accepted, completed, cancelled
+ const getBookingStatusSummary = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const statusAggregation = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Initialize all statuses with 0
+    const defaultStatusSummary: Record<string, number> = {
+      Pending: 0,
+      Accepted: 0,
+      Completed: 0,
+      Cancelled: 0,
+    };
+
+    // Update counts from aggregation
+    statusAggregation.forEach(({ _id, count }) => {
+      if (_id in defaultStatusSummary) {
+        defaultStatusSummary[_id] = count;
+      }
+    });
+
+    res.status(StatusCodes.OK).json({
+      status: "success",
+      data: defaultStatusSummary,
+    });
+  } catch (error: any) {
+    console.error("Error in getBookingStatusSummary:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: error.message || "Internal server error",
+    });
+  }
+};
 
 
 export const BookingController = {
@@ -1148,8 +1424,10 @@ export const BookingController = {
   getMonthlyEarnings,
   getBookingLocation,
   cancelBooking,
-
-
+  getUserBookingsById,
+  getUserEarnings,
+  getBookingStatusSummary
+  
   
 };
 
