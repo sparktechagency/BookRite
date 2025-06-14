@@ -8,12 +8,13 @@ import { StatusCodes } from "http-status-codes";
 const toggleBookmark = catchAsync(async (req: Request, res: Response) => {
   const user = req.user?.id || req.user?._id;
   const service = req.params.id;
+  const { bookmark } = req.body; 
 
-  if (!user || !service) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Missing user or service ID");
+  if (!user || !service || typeof bookmark !== 'boolean') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Missing or invalid input");
   }
 
-  const message = await BookmarkService.toggleBookmark(user, service);
+  const message = await BookmarkService.toggleBookmark(user, service, bookmark);
 
   sendResponse(res, {
     statusCode: 200,
@@ -21,6 +22,7 @@ const toggleBookmark = catchAsync(async (req: Request, res: Response) => {
     message,
   });
 });
+
 
 
 

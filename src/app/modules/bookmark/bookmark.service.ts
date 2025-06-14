@@ -53,21 +53,30 @@ import { Request, Response } from "express";
 //   }
 // };
 
-const toggleBookmark = async (user: string, service: string): Promise<string> => {
+const toggleBookmark = async (user: string, service: string, bookmark: boolean): Promise<string> => {
   try {
-    const existingBookmark = await Bookmark.findOneAndDelete({ user, service });
-
-    if (!existingBookmark) {
-      await Bookmark.create({ user, service });
-      return "Bookmark added successfully";
+    if (bookmark) {
+      // Add bookmark if not exists
+      const existing = await Bookmark.findOne({ user, service });
+      if (!existing) {
+        await Bookmark.create({ user, service });
+        return "Bookmark added successfully";
+      }
+      return "Bookmark already exists";
+    } else {
+      // Remove bookmark if exists
+      const deleted = await Bookmark.findOneAndDelete({ user, service });
+      if (deleted) {
+        return "Bookmark removed successfully";
+      }
+      return "Bookmark already removed";
     }
-
-    return "Bookmark removed successfully";
   } catch (error) {
     console.error("Bookmark toggle error:", error);
     throw new ApiError(StatusCodes.EXPECTATION_FAILED, "Failed to toggle bookmark");
   }
 };
+
 
 
 
