@@ -203,75 +203,147 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       }
     }
 
-    const newBookingIds = [];
+    // const newBookingIds = [];
 
-    for (const slot of timeSlot) {
-      const newBooking = new Booking({
-        serviceId,
-        userId,
-        serviceProviderId,
-        bookingDate: parsedBookingDate,
-        timeSlot: slot,
-        location,
-        contactNumber,
-        images: images || [],
-        status: 'Pending'
-      });
+    // for (const slot of timeSlot) {
+    //   const newBooking = new Booking({
+    //     serviceId,
+    //     userId,
+    //     serviceProviderId,
+    //     bookingDate: parsedBookingDate,
+    //     timeSlot: slot,
+    //     location,
+    //     contactNumber,
+    //     images: images || [],
+    //     status: 'Pending'
+    //   });
 
-      const savedBooking = await newBooking.save();
-      newBookingIds.push(savedBooking._id);
+    //   const savedBooking = await newBooking.save();
+    //   newBookingIds.push(savedBooking._id);
 
-      const notificationText = `New booking for ${service.serviceName} on ${parsedBookingDate.toLocaleDateString()} at ${slot}`;
+    //   const notificationText = `New booking for ${service.serviceName} on ${parsedBookingDate.toLocaleDateString()} at ${slot}`;
 
-      const notification = new Notification({
-        text: notificationText,
-        receiver: serviceProviderId,
-        sender: userId,
-        referenceId: savedBooking._id.toString(),
-        screen: 'BOOKING',
-        read: false,
-        type: 'ADMIN',
-      });
+    //   const notification = new Notification({
+    //     text: notificationText,
+    //     receiver: serviceProviderId,
+    //     sender: userId,
+    //     referenceId: savedBooking._id.toString(),
+    //     screen: 'BOOKING',
+    //     read: false,
+    //     type: 'ADMIN',
+    //   });
 
-      await notification.save();
+    //   await notification.save();
 
-      const io = getIO();
-      io.emit(`notification::${serviceProviderId}`, { 
-        text: notificationText,
-        type: "Booking",
-        booking: savedBooking,
-        createdAt: notification.createdAt
-      });
+    //   const io = getIO();
+    //   io.emit(`notification::${serviceProviderId}`, { 
+    //     text: notificationText,
+    //     type: "Booking",
+    //     booking: savedBooking,
+    //     createdAt: notification.createdAt
+    //   });
 
-      const targetDate = new Date(parsedBookingDate);
-      targetDate.setUTCHours(0, 0, 0, 0);
+    //   const targetDate = new Date(parsedBookingDate);
+    //   targetDate.setUTCHours(0, 0, 0, 0);
 
-      await Availability.updateOne(
-        {
-          serviceProviderId,
-          date: {
-            $gte: targetDate,
-            $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
-          },
-          'timeSlots.startTime': slot
-        },
-        {
-          $set: {
-            'timeSlots.$.isBooked': true,
-            'timeSlots.$.bookingId': savedBooking._id
-          }
-        }
-      );
-    }
+    //   await Availability.updateOne(
+    //     {
+    //       serviceProviderId,
+    //       date: {
+    //         $gte: targetDate,
+    //         $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
+    //       },
+    //       'timeSlots.startTime': slot
+    //     },
+    //     {
+    //       $set: {
+    //         'timeSlots.$.isBooked': true,
+    //         'timeSlots.$.bookingId': savedBooking._id
+    //       }
+    //     }
+    //   );
+    // }
+const newBooking = new Booking({
+  serviceId,
+  userId,
+  serviceProviderId,
+  bookingDate: parsedBookingDate,
+  timeSlot, // store the array of time slots
+  location,
+  contactNumber,
+  images: images || [],
+  status: 'Pending'
+});
 
-    res.status(201).json({
-      success: true,
-      message: 'Bookings created successfully',
-      data: {
-        bookingIds: newBookingIds,
-        price: service.price,
+const savedBooking = await newBooking.save();
+
+// Send notification once for the entire booking
+const notificationText = `New booking for ${service.serviceName} on ${parsedBookingDate.toLocaleDateString()} at ${timeSlot.join(', ')}`;
+
+const notification = new Notification({
+  text: notificationText,
+  receiver: serviceProviderId,
+  sender: userId,
+  referenceId: savedBooking._id.toString(),
+  screen: 'BOOKING',
+  read: false,
+  type: 'ADMIN',
+});
+
+await notification.save();
+
+const io = getIO();
+io.emit(`notification::${serviceProviderId}`, { 
+  text: notificationText,
+  type: "Booking",
+  booking: savedBooking,
+  createdAt: notification.createdAt
+});
+console.log('🔔 Emitting to:', `notification::${serviceProviderId}`);
+console.log('🧾 Notification Payload:', {
+  text: notificationText,
+  type: "Booking",
+  booking: savedBooking,
+  createdAt: notification.createdAt
+});
+
+// Mark each slot as booked in Availability
+const targetDate = new Date(parsedBookingDate);
+targetDate.setUTCHours(0, 0, 0, 0);
+
+for (const slot of timeSlot) {
+  await Availability.updateOne(
+    {
+      serviceProviderId,
+      date: {
+        $gte: targetDate,
+        $lt: new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
       },
-    });
+      'timeSlots.startTime': slot
+    },
+    {
+      $set: {
+        'timeSlots.$.isBooked': true,
+        'timeSlots.$.bookingId': savedBooking._id
+      }
+    }
+  );
+}
+    // const newBookingIds = [savedBooking._id];
+ const populatedBooking = await Booking.findById(savedBooking._id)
+  // .populate('serviceId')
+  // .populate('userId')
+  // .populate('serviceProviderId');
+
+res.status(201).json({
+  success: true,
+  message: 'Booking created successfully',
+  data: {
+    booking: populatedBooking,
+    price: service.price,
+  },
+});
+
   } catch (error: any) {
     console.error('Error creating booking:', error);
     res.status(500).json({
@@ -760,7 +832,7 @@ const getUserBookingsById = async (req: Request, res: Response): Promise<void> =
     });
   }
 };
-;
+
 
 
 //get all bookings
@@ -1228,7 +1300,6 @@ export const cancelBooking = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-//get serviceprovider own information
 export const getUserEarnings = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.params.userId || req.query.userId;
@@ -1369,8 +1440,11 @@ export const getUserEarnings = async (req: Request, res: Response): Promise<void
   }
 };
 
-//total services status waised count like pending, accepted, completed, cancelled
- const getBookingStatusSummary = async (req: Request, res: Response): Promise<void> => {
+
+// total services status waised count like pending, accepted, completed, cancelled
+ 
+
+const getBookingStatusSummary = async (req: Request, res: Response): Promise<void> => {
   try {
     const statusAggregation = await Booking.aggregate([
       {
@@ -1409,6 +1483,58 @@ export const getUserEarnings = async (req: Request, res: Response): Promise<void
   }
 };
 
+ const getBookingStatusSummaryDetails = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { status } = req.query;
+
+    // Get all status counts
+    const statusAggregation = await Booking.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const defaultStatusSummary: Record<string, number> = {
+      Pending: 0,
+      Accepted: 0,
+      Completed: 0,
+      Cancelled: 0,
+    };
+
+    statusAggregation.forEach(({ _id, count }) => {
+      if (_id in defaultStatusSummary) {
+        defaultStatusSummary[_id] = count;
+      }
+    });
+
+    // If status query is provided, return filtered bookings
+    let filteredBookings = [];
+    if (status && typeof status === "string" && status in defaultStatusSummary) {
+      filteredBookings = await Booking.find({ status }).sort({ createdAt: -1 });
+    } else {
+      // Otherwise return all bookings
+      filteredBookings = await Booking.find().sort({ createdAt: -1 });
+    }
+
+    res.status(StatusCodes.OK).json({
+      status: "success",
+      data: {
+        summary: defaultStatusSummary,
+        bookings: filteredBookings,
+      },
+    });
+  } catch (error: any) {
+    console.error("Error in getBookingStatusSummary:", error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      status: "error",
+      message: error.message || "Internal server error",
+    });
+  }
+};
+
 
 export const BookingController = {
   createBooking,
@@ -1426,7 +1552,8 @@ export const BookingController = {
   cancelBooking,
   getUserBookingsById,
   getUserEarnings,
-  getBookingStatusSummary
+  getBookingStatusSummary,
+  getBookingStatusSummaryDetails
   
   
 };

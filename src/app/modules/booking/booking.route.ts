@@ -54,6 +54,11 @@ router.get(
   auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
   BookingController.getBookingStatusSummary
 );
+router.get(
+  '/admin/booking-status/details',
+  auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.USER),
+  BookingController.getBookingStatusSummaryDetails
+);
 
 // router.get(
 //   '/dayaviliability',

@@ -29,6 +29,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     data: {
       Token: result.createToken,
       role: result.role,
+      user: result.user, 
     },
   });
 });

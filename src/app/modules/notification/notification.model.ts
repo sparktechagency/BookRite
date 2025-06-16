@@ -34,7 +34,7 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
         },
         type: {
             type: String,
-            enum: ['ADMIN','USER','Booking Cancelled', 'Booking Accepted', 'Booking Completed', 'Booking Rejected'],
+            enum: ['ADMIN','USER','Booking Cancelled', 'Booking Accepted', 'Booking Completed', 'Booking Rejected','chat'],
             required: false
         },
         createdAt: {

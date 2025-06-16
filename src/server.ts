@@ -113,7 +113,7 @@ async function main() {
     });
 
     // Create separate HTTP server just for socket.io
-    const socketPort = port; // socket server port
+    const socketPort = process.env.SOCKET_PORT || 5001; // socket server port
     const socketHttpServer = http.createServer();
    io = initSocket(server);
 

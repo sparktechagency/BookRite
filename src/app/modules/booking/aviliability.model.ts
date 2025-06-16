@@ -1,5 +1,5 @@
 
-import { Model, model, Schema, Types } from 'mongoose';
+import mongoose, { Model, model, Schema, Types } from 'mongoose';
 
 // Interface for time slots
 interface ITimeSlot {
@@ -52,7 +52,7 @@ const availabilitySchema = new Schema<IAvailability, AvailabilityModel>(
       type: Date,
       required: true,
     },
-    timeSlots: [timeSlotSchema],
+ timeSlots: [timeSlotSchema],
   },
   { timestamps: true }
 );
