@@ -241,6 +241,31 @@ const resendOtp = async (email: string): Promise<{ email: string }> => {
   return users;
 };
 
+const getNearbyUsers = async (userId: string) => {
+  const currentUser = await User.findById(userId).select('location');
+
+  if (!currentUser || !currentUser.location || !currentUser.location.coordinates) {
+    throw new Error('User location not found');
+  }
+
+  const [longitude, latitude] = currentUser.location.coordinates;
+
+  const nearbyUsers = await User.find({
+    _id: { $ne: userId }, // exclude current user
+    location: {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates: [longitude, latitude],
+        },
+        $maxDistance: 5000, // 5km = 5000 meters
+      },
+    },
+  }).select('name profile');
+
+  return nearbyUsers;
+};
+
 
  export const UserService = {
   createUserToDB,
@@ -251,5 +276,6 @@ const resendOtp = async (email: string): Promise<{ email: string }> => {
   createSuperAdminToDB,
   resendOtp,
   updateUserLocation,
-  getUsersWithLocationAccess
+  getUsersWithLocationAccess,
+  getNearbyUsers
 };
