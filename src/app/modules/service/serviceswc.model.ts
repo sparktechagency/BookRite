@@ -50,6 +50,9 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
       type: String,
       required: false
       },
+    totalRating: {
+      type: Schema.Types.ObjectId, ref: 'Rating', required: false
+    },
   },
   { timestamps: true }
 )

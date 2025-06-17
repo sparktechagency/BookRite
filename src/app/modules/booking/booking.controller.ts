@@ -292,7 +292,12 @@ const notification = new Notification({
 
 await notification.save();
 
-const io = getIO();
+    // const io = global.io
+    // if (io) {
+    //     io.emit(`getMessage::${payload?.chatId}`, response);
+    // }
+
+const io = global.io;
 io.emit(`notification::${serviceProviderId}`, { 
   text: notificationText,
   type: "Booking",
@@ -519,32 +524,41 @@ const updateBookingStatus = async (req: Request, res: Response): Promise<void> =
     const { bookingId } = req.params;
     const { status, paymentStatus } = req.body;
 
-    // Validate required params
     if (!bookingId) {
-       res.status(StatusCodes.BAD_REQUEST).json({
+      res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'Booking ID is required',
       });
-    }
-    if (!status && !paymentStatus) {
-       res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Please provide status or paymentStatus to update',
-      });
-    }
-
-    // Find the booking
-    const booking = await Booking.findById(bookingId);
-    if (!booking) {
-       res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: 'Booking not found',
-      });
-      
       return;
     }
 
-    // Update fields
+    if (!status && !paymentStatus) {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Please provide status or paymentStatus to update',
+      });
+      return;
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: 'Booking not found',
+      });
+      return;
+    }
+
+    // ❗️Prevent updates if status is Cancelled
+    if (booking.status === 'Cancelled') {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'This booking has been cancelled and cannot be updated.',
+      });
+      return;
+    }
+
+    // ✅ Proceed with update
     if (status) booking.status = status;
     if (paymentStatus) booking.paymentStatus = paymentStatus;
 
@@ -1274,8 +1288,8 @@ export const cancelBooking = async (req: Request, res: Response): Promise<void> 
 
     await notification.save();
 
-    const io = getIO();
-    io.emit(`notification::${notification.receiver}`, {
+ const io = global.io;
+    io.emit(`cancelled::${notification.receiver}`, {
       text: notificationText,
       type: 'Booking Cancelled',
       bookingId: booking._id,
@@ -1444,8 +1458,9 @@ export const getUserEarnings = async (req: Request, res: Response): Promise<void
 // total services status waised count like pending, accepted, completed, cancelled
  
 
-const getBookingStatusSummary = async (req: Request, res: Response): Promise<void> => {
+const getBookingStatusSummary = async (req: Request, res: Response): Promise<void>=> {
   try {
+    console.log("User ID:", req.user.id); // Log the user ID for debugging
     const statusAggregation = await Booking.aggregate([
       {
         $group: {
@@ -1455,7 +1470,6 @@ const getBookingStatusSummary = async (req: Request, res: Response): Promise<voi
       },
     ]);
 
-    // Initialize all statuses with 0
     const defaultStatusSummary: Record<string, number> = {
       Pending: 0,
       Accepted: 0,
@@ -1463,17 +1477,25 @@ const getBookingStatusSummary = async (req: Request, res: Response): Promise<voi
       Cancelled: 0,
     };
 
-    // Update counts from aggregation
     statusAggregation.forEach(({ _id, count }) => {
       if (_id in defaultStatusSummary) {
         defaultStatusSummary[_id] = count;
       }
     });
+    // const allStatus = await Promise.all(["Pending", "Accepted", "Cancelled", "Completed"].map(
+    //     async (status: string) => {
+    //         return {
+    //             status: await Booking.countDocuments({ serviceProviderId: req.user.id, status: status })
+    //         }
+    //     })
+    // );
+    // console.log("All Status Counts:", allStatus);
 
     res.status(StatusCodes.OK).json({
       status: "success",
-      data: defaultStatusSummary,
+      data: defaultStatusSummary
     });
+
   } catch (error: any) {
     console.error("Error in getBookingStatusSummary:", error);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -1513,10 +1535,17 @@ const getBookingStatusSummary = async (req: Request, res: Response): Promise<voi
     // If status query is provided, return filtered bookings
     let filteredBookings = [];
     if (status && typeof status === "string" && status in defaultStatusSummary) {
-      filteredBookings = await Booking.find({ status }).sort({ createdAt: -1 });
+      filteredBookings = await Booking.find({ status }).sort({ createdAt: -1 })
+        // .populate('serviceProviderId')
+        .populate('serviceId', 'serviceName price serviceDescription image category location totalRating')
+        .populate('userId', 'reviews name email contactNumber')
+        .exec();
     } else {
       // Otherwise return all bookings
-      filteredBookings = await Booking.find().sort({ createdAt: -1 });
+      filteredBookings = await Booking.find().sort({ createdAt: -1 })
+        .populate('serviceId', 'serviceName price serviceDescription image category location totalRating')
+        .populate('userId', 'reviews name email contactNumber')
+        .exec();
     }
 
     res.status(StatusCodes.OK).json({

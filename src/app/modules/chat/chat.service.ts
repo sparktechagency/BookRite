@@ -5,19 +5,31 @@ import { Chat } from "./chat.model";
 
 
 
-const createChatToDB = async(payload:any): Promise<IChat> =>{
+// const createChatToDB = async(payload:any): Promise<IChat> =>{
 
-    const isExistChat:IChat | null = await Chat.findOne({
-        participants: { $all: payload }
+//     const isExistChat:IChat | null = await Chat.findOne({
+//         participants: { $all: payload }
+//     });
+
+
+//     if(isExistChat){
+//         return isExistChat
+//     }
+//     const chat:IChat = await Chat.create({participants: payload});
+//     return chat;
+// }
+const createChatToDB = async (participants: string[], name: string): Promise<IChat> => {
+    const isExistChat: IChat | null = await Chat.findOne({
+        participants: { $all: participants },
     });
 
-
-    if(isExistChat){
-        return isExistChat
+    if (isExistChat) {
+        return isExistChat;
     }
-    const chat:IChat = await Chat.create({participants: payload});
+    const chat: IChat = await Chat.create({ participants, name });
     return chat;
-}
+};
+
 
 const getChatFromDB = async(user:any, search: string): Promise<IChat[]> =>{
 

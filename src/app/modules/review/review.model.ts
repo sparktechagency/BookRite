@@ -23,6 +23,7 @@ const reviewSchema = new Schema<IReview, ReviewModel>(
             default: "0.0",
         },
 
+        totalRating: { rating: { type: Number, default: 0 }, count: { type: Number, default: 0 } },
     },
     {timestamps: true}
 );

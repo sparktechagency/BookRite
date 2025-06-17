@@ -103,23 +103,56 @@ async function main() {
     logger.info(colors.green('🚀 Database connected successfully'));
 
     // Express server port (e.g. 4000)
-    const port =
+//     const port =
+//       typeof config.port === 'number' ? config.port : Number(config.port);
+
+//     server = app.listen(port, config.ip_address as string, () => {
+//       logger.info(
+//         colors.yellow(`♻️  Application listening on port: ${port}`)
+//       );
+//     });
+
+//     // Create separate HTTP server just for socket.io
+//     const socketPort = process.env.SOCKET_PORT || 5001; // socket server port
+//     const socketHttpServer = http.createServer();
+//    io = initSocket(server);
+
+// // optionally call your socket helper with io instance
+// socketHelper.socket(io);
+//     io = new Server(socketHttpServer, {
+//       pingTimeout: 60000,
+//       cors: {
+//         origin: '*',
+//       },
+//     });
+
+//     socketHelper.socket(io);
+
+//     // Start socket server on its own port
+//     socketHttpServer.listen(socketPort, () => {
+//       logger.info(
+//         colors.yellow(`🚀 Socket.IO server listening on port: ${socketPort}`)
+//       );
+//     });
+
+//     io = initSocket(server);
+//   socketHelper.socket(io);
+//     global.io = io;
+
+//   } catch (error) {
+//     errorLogger.error(colors.red('🤢 Failed to connect Database'), error);
+//   }
+ const port =
       typeof config.port === 'number' ? config.port : Number(config.port);
 
     server = app.listen(port, config.ip_address as string, () => {
       logger.info(
-        colors.yellow(`♻️  Application listening on port: ${port}`)
+        colors.yellow(`♻️  Application listening on port:${config.port}`)
       );
     });
 
-    // Create separate HTTP server just for socket.io
-    const socketPort = process.env.SOCKET_PORT || 5001; // socket server port
-    const socketHttpServer = http.createServer();
-   io = initSocket(server);
-
-// optionally call your socket helper with io instance
-socketHelper.socket(io);
-    io = new Server(socketHttpServer, {
+    //socket
+    const io = new Server(server, {
       pingTimeout: 60000,
       cors: {
         origin: '*',
@@ -127,20 +160,12 @@ socketHelper.socket(io);
     });
 
     socketHelper.socket(io);
-
-    // Start socket server on its own port
-    socketHttpServer.listen(socketPort, () => {
-      logger.info(
-        colors.yellow(`🚀 Socket.IO server listening on port: ${socketPort}`)
-      );
-    });
-
-    io = initSocket(server);
-  socketHelper.socket(io);
+    //@ts-ignore
     global.io = io;
 
+
   } catch (error) {
-    errorLogger.error(colors.red('🤢 Failed to connect Database'), error);
+    errorLogger.error(colors.red('🤢 Failed to connect Database'));
   }
 
   // handle unhandledRejection

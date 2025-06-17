@@ -27,9 +27,10 @@ export type IWcService = {
     _id: string;
     name: string;
   };
+  totalRating?: Types.ObjectId; 
 
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export type ServiceWcModel = Model<IWcService, Record<string, unknown>>

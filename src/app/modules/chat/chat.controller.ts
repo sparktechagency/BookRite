@@ -42,19 +42,42 @@ import { StatusCodes } from "http-status-codes";
 import { ChatService } from "./chat.service";
 
 
-const createChat = catchAsync(async(req: Request, res: Response)=>{
+// const createChat = catchAsync(async(req: Request, res: Response)=>{
+//     const user = req.user;
+//     const otherUser = req.params.id
+//     const participants = [user?.id, otherUser];
+//     const chat = await ChatService.createChatToDB(participants);
+
+//     sendResponse(res, {
+//         statusCode: StatusCodes.OK,
+//         success: true,
+//         message: "Create Chat Successfully",
+//         data: chat
+//     })
+// })
+const createChat = catchAsync(async (req: Request, res: Response) => {
     const user = req.user;
-    const otherUser = req.params.id
-    const participants = [user?.id, otherUser];
-    const chat = await ChatService.createChatToDB(participants);
+
+    const participantsFromBody: string[] = req.body.participants || [];
+    
+    const participants = new Set(participantsFromBody);
+    if (user?.id) {
+      participants.add(user.id);
+    }
+
+    const participantsArray = Array.from(participants);
+    const name = req.body.name || '';
+
+    const chat = await ChatService.createChatToDB(participantsArray, name);
 
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: "Create Chat Successfully",
-        data: chat
-    })
-})
+        message: 'Create Chat Successfully',
+        data: chat,
+    });
+});
+
 
 const getChat = catchAsync(async(req: Request, res: Response)=>{
     const user = req.user;
