@@ -426,8 +426,9 @@ const getBookingsFromDB = async () => {
           select: 'name email role', 
           match: { role: USER_ROLES.ADMIN }, 
         })
-        .populate('serviceId');
-  
+        .populate('serviceId')
+        .populate('userId', 'name email role')
+
       return bookings;
     } catch (error) {
       throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Error fetching bookings from database');

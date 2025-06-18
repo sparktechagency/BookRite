@@ -180,7 +180,7 @@ const getBookings = async (req: Request, res: Response): Promise<void> => {
   
       const { bookingId } = req.params;
   
-      const booking = await BookingController.getBookingById(bookingId);
+      const booking = await Booking.findById(bookingId);
   
       if (!booking) {
         throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');

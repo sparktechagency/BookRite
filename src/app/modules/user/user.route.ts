@@ -40,7 +40,7 @@ router.post(
   UserController.resendOtp
 );
 
-router.patch('/location',
+router.put('/location',
     auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
     UserController.updateUserLocationController
 );
