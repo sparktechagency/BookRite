@@ -44,7 +44,7 @@ const updateService = catchAsync(async (req: Request, res: Response) => {
 
   let image;
   if (req.files && "image" in req.files && req.files.image[0]) {
-    image = `/images/${req.files.image[0].filename}`;
+    image = `/uploads/images/${req.files.image[0].filename}`;
   }
   const data = {
     ...updateServiceData,

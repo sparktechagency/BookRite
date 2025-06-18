@@ -419,21 +419,28 @@ const getAdminFromDB = async (): Promise<IUser[]> => {
 }
 
 const getBookingsFromDB = async () => {
-    try {
-      const bookings = await Booking.find()
-        .populate({
-          path: 'serviceProviderId',
-          select: 'name email role', 
-          match: { role: USER_ROLES.ADMIN }, 
-        })
-        .populate('serviceId')
-        .populate('userId', 'name email role')
+  try {
+    const bookings = await Booking.find()
+    //desending sort by createdAt
+      .sort({ createdAt: -1 })
+      .populate({
+        path: 'serviceProviderId',
+        select: 'name email role',
+        match: { role: USER_ROLES.ADMIN },
+      })
+      .populate('servicesId', 'CategoryName')
+      .populate('serviceId', 'serviceName price image')
+      .populate('userId', 'name email role');
 
-      return bookings;
-    } catch (error) {
-      throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Error fetching bookings from database');
-    }
-  };
+    return bookings;
+  } catch (error) {
+    throw new ApiError(
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching bookings from database'
+    );
+  }
+};
+
 
 export const AdminService = {
     usersFromDB,

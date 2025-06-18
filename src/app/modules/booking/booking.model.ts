@@ -7,6 +7,11 @@ const bookingSchema = new Schema<IBooking>({
     ref: 'Servicewc', 
     required: true,
   },
+  servicesId: {
+    type: Schema.Types.ObjectId as any,
+    ref: 'Service',
+    required: false,
+  },
   userId: {
     type: Schema.Types.ObjectId as any,
     ref: 'User',
