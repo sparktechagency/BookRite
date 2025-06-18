@@ -10,6 +10,7 @@ import { Secret } from "jsonwebtoken";
 import { User } from "../user/user.model";
 import mongoose from "mongoose";
 import { getIO } from '../../../helpers/socket';
+import { geocodeAddress } from '../../../util/map';
 
 import { Notification } from "../notification/notification.model"; 
 import { USER_ROLES } from "../../../enums/user";
@@ -203,6 +204,21 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       }
     }
 
+let geoCoordinates: [number, number] = [0, 0];
+
+if (typeof location === 'string') {
+  try {
+    geoCoordinates = await geocodeAddress(location);
+  } catch (error) {
+     res.status(400).json({
+      success: false,
+      message: 'Invalid address. Could not convert to coordinates.',
+    });
+    return;
+  }
+}
+
+
     // const newBookingIds = [];
 
     // for (const slot of timeSlot) {
@@ -269,7 +285,10 @@ const newBooking = new Booking({
   serviceProviderId,
   bookingDate: parsedBookingDate,
   timeSlot, // store the array of time slots
-  location,
+  location: {
+    type: 'Point',
+    coordinates: geoCoordinates
+  },
   contactNumber,
   images: images || [],
   status: 'Pending'
@@ -344,7 +363,13 @@ res.status(201).json({
   success: true,
   message: 'Booking created successfully',
   data: {
-    booking: populatedBooking,
+  booking: {
+      ...populatedBooking?.toObject?.(),
+      // location: {
+      //   type: populatedBooking?.location?.type,
+      //   coordinates: populatedBooking?.location?.coordinates,
+      // }
+    },
     price: service.price,
   },
 });

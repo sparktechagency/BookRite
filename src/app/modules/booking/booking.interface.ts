@@ -10,9 +10,13 @@ export interface IBooking {
     timeSlot?: string[];
     status: 'Pending' | 'Accepted' | 'Completed' | 'Cancelled';
     paymentStatus: 'Pending' | 'Refunded' | 'Paid';
-    location: String; 
+    // location: String; 
     contactNumber: string;
     paymentSessionId: string;
+    location: {
+      type: String;
+      coordinates: [Number];
+    };
     images: string[]; 
     createdAt: Date;
     updatedAt: Date;

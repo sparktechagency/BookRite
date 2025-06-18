@@ -27,7 +27,19 @@ const bookingSchema = new Schema<IBooking>({
   },
   timeSlot: [{ type: String, required: false }], 
 
-  location: { type: String, required: true },
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        required: false,
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        required: false,
+        default: [0, 0],
+      },
+    },
 
   contactNumber: { type: String, required: true },
   status: { type: String, default: 'Pending', enum: ['Pending', 'Accepted', 'Completed', 'Cancelled'] },
