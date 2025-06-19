@@ -26,3 +26,8 @@ export const deletePortfolio = async (userId: string): Promise<IPortfolio | null
 
   return portfolio;
 } 
+
+//get portfolio by providerId
+export const getPortfolioByProviderId = async (providerId: string): Promise<IPortfolio | null> => {
+  return Portfolio.findOne({ userId: providerId});
+};

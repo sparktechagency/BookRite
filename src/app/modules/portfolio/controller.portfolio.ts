@@ -103,4 +103,29 @@ export const deletePortfolio = async (req: Request, res: Response): Promise<void
     });
   }
 };
+
+//get portfolio by providerId
+export const getPortfolioByProviderId = async (req: Request, res: Response): Promise<void> => { 
+  try {
+    const providerId = req.params.userId;
+    if (!providerId) {
+      res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: 'Provider ID is required' });
+      return;
+    }
+
+    const portfolio = await portfolioService.getPortfolioByProviderId(providerId);
+    if (!portfolio) {
+      res.status(StatusCodes.NOT_FOUND).json({ success: false, message: 'Portfolio not found for this provider' });
+      return;
+    }
+
+    res.status(StatusCodes.OK).json({ success: true, data: portfolio });
+  } catch (error: any) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Error fetching portfolio by provider ID',
+      errorMessages: error.message || String(error),
+    });
+  }
+}
  
