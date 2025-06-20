@@ -10,7 +10,7 @@ import { IUser } from './user.interface';
 import { User } from './user.model';
 import bcrypt from 'bcrypt';
 import cron from 'node-cron';
-import fetch from 'node-fetch';
+// import fetch from 'node-fetch';
 import { geocodeAddress } from '../../../util/map';
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   
