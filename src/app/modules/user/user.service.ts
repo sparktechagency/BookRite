@@ -12,6 +12,7 @@ import bcrypt from 'bcrypt';
 import cron from 'node-cron';
 // import fetch from 'node-fetch';
 import { geocodeAddress } from '../../../util/map';
+import { Servicewc } from '../service/serviceswc.model';
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   
   //set role
@@ -104,17 +105,37 @@ const createSuperAdminToDB = async (payload: Partial<IUser>): Promise<IUser> => 
   return createUser;
 };
 
+// const getUserProfileFromDB = async (
+//   user: JwtPayload
+// ): Promise<Partial<IUser>> => {
+//   const id = (user as any)._id || (user as any).id; 
+//   const isExistUser: any = await User.isExistUserById(id);
+//   if (!isExistUser) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+//   }
+
+//   return isExistUser;
+// };
+
 const getUserProfileFromDB = async (
   user: JwtPayload
-): Promise<Partial<IUser>> => {
-  const id = (user as any)._id || (user as any).id; 
+): Promise<Partial<IUser> & { totalServices?: number }> => {
+  const id = (user as any)._id || (user as any).id;
+
   const isExistUser: any = await User.isExistUserById(id);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  return isExistUser;
+  // Count services created by this user
+  const totalServices = await Servicewc.countDocuments({ userId: id });
+
+  return {
+    ...isExistUser,
+    totalServices
+  };
 };
+
 
 
 

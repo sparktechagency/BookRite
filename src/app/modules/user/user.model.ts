@@ -116,6 +116,10 @@ isSubscribed: {
     stripeCustomerId: {
       type: String,
     },
+    totalService :{
+      type:Number,
+      require:false,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

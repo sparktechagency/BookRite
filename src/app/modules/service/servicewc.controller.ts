@@ -47,9 +47,7 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
   }
 
   const imagePath = `/uploads/images/${files.image[0].filename}`;
-
-
-  const userId = (req as any).user?.id || req.body.User; // fallback to body if you want
+  const userId = (req as any).user?.id || req.body.User;
 
   if (!userId) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "User is required");
@@ -62,22 +60,22 @@ const createServiceWc = catchAsync(async (req: Request, res: Response) => {
     price: req.body.price,
     reviews: req.body.reviews || [],
     image: imagePath,
-    User: userId,
+    userId,
     location: req.body.location,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
 
   const result = await ServiceWcServices.createServiceToDB(data, userId);
-  const resultObj = { ...result, serviceProviderId: (result as any).User };
-  delete (resultObj as any).User;
+
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
     message: 'Service created successfully',
-    data: resultObj,
+    data: result,
   });
 });
+
 
 const getServiceWcs = catchAsync(async (req: Request, res: Response) => {
   const result = await ServiceWcServices.getServicesFromDB(req);

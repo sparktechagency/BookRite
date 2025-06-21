@@ -37,7 +37,7 @@ router.get('/by/:userId', auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUP
 router.get('/location/:bookingId', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.USER), BookingController.getBookingLocation);
 
 //cancelled bookings
-router.put('/cancelled/:bookingId', auth(USER_ROLES.ADMIN, USER_ROLES.USER), BookingController.cancelBooking);
+router.delete('/cancelled/:bookingId', auth(USER_ROLES.ADMIN, USER_ROLES.USER,USER_ROLES.SUPER_ADMIN), BookingController.cancelBooking);
 
 router.get(
   '/service-provider/:serviceProviderId/time-slots/:bookingDate',

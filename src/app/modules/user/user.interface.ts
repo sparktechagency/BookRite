@@ -68,6 +68,7 @@ export type IUser = {
     externalAccountId: string;
     currency: string;
   };
+  totalService:Number,
   stripeCustomerId?: string;
   createdAt: Date;
 };

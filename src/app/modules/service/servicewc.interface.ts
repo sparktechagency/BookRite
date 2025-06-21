@@ -5,6 +5,7 @@ export type IWcService = {
   User?: undefined;
   Bookmark?: undefined;
   // _id: Types.ObjectId;
+  userId:Types.ObjectId,
   serviceName: string;
   serviceDescription: string;
   image: string;
