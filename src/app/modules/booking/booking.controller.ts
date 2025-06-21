@@ -110,6 +110,7 @@ import { checkSlotAvailability } from "./aviliability.controller";
 //     });
 //   }
 // };
+
 export const createBooking = async (req: Request, res: Response): Promise<void> => {
   try {
     const { serviceId, bookingDate, location, images, contactNumber, serviceProviderId, timeSlot } = req.body;
@@ -365,12 +366,10 @@ res.status(201).json({
   data: {
   booking: {
       ...populatedBooking?.toObject?.(),
-      // location: {
-      //   type: populatedBooking?.location?.type,
-      //   coordinates: populatedBooking?.location?.coordinates,
-      // }
+      price: service.price,
+ 
     },
-    price: service.price,
+    // price: service.price,
   },
 });
 
@@ -871,7 +870,6 @@ const getUserBookingsById = async (req: Request, res: Response): Promise<void> =
     });
   }
 };
-
 
 
 //get all bookings
