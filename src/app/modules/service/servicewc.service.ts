@@ -94,8 +94,8 @@ const getServicesFromDB = async (req: any) => {
       path: 'User',
       select: 'name _id',
     })
-    .sort({ createdAt: -1 });
-
+    .sort({ createdAt: -1 })
+   
   // TODO: Apply filters/search here if needed
 
   const services = await query.exec();

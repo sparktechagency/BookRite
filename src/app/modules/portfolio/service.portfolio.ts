@@ -4,6 +4,20 @@ import Portfolio from './model.portfolio';
 export const getPortfolioByUserId = async (userId: string): Promise<IPortfolio | null> => {
   return Portfolio.findOne({ userId });
 };
+export const getPortfoliosByUserId = async (userId: string): Promise<IPortfolio[]> => {
+  return Portfolio.find({ userId });
+};
+
+
+export const createPortfolio = async (
+  userId: string,
+  data: Partial<IPortfolio>
+): Promise<IPortfolio> => {
+  const portfolio = new Portfolio({ userId, ...data });
+  return await portfolio.save();
+};
+
+
 
 export const createOrUpdatePortfolio = async (
   userId: string,

@@ -121,7 +121,7 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
   // Find services by category with basic fields
   const services = await Servicewc.find({ category: categoryId })
     .sort({ createdAt: -1 })
-    .select('image serviceName rating location price category')
+    .select('image serviceName rating location price category userId')
     .populate('category', 'CategoryName image')
     .lean();
 

@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IPortfolio extends mongoose.Document {
-  userId: mongoose.Types.ObjectId;
-           
+  userId: mongoose.Types.ObjectId;        
   name: string;
   description?: string;
   image: string[];        

@@ -17,7 +17,7 @@ router.get('/booking-status',
 
 
 router.put('/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN), BookingController.updateBookingStatus);
-router.get('/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN), BookingController.getBookingById);
+router.get('/service/:bookingId', auth(USER_ROLES.USER, USER_ROLES.ADMIN), BookingController.getBookingById);
 router.get('/userstate', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyUserStats);
 router.get('/getAllBookings', auth(USER_ROLES.SUPER_ADMIN,USER_ROLES.ADMIN), BookingController.getAllBookings);
 router.get('/bookingstate', auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN), BookingController.getMonthlyBookingStats);

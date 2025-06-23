@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as portfolioService from './service.portfolio';
+import { createPortfolio } from './service.portfolio';
 import { StatusCodes } from 'http-status-codes';
 
 export const getUserPortfolio = async (req: Request, res: Response): Promise<void> => {
@@ -25,22 +26,53 @@ export const getUserPortfolio = async (req: Request, res: Response): Promise<voi
     });
   }
 };
-
-export const createOrUpdatePortfolio = async (req: Request, res: Response): Promise<void> => {
+export const getUserPortfolios = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
     if (!userId) {
-      res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: 'Unauthorized' });
+      res.status(StatusCodes.UNAUTHORIZED).json({ 
+        success: false, 
+        message: 'Unauthorized' 
+      });
+      return;
+    }
+
+    const portfolios = await portfolioService.getPortfoliosByUserId(userId);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      data: portfolios,
+      message: portfolios.length > 0 
+        ? 'Portfolios fetched successfully' 
+        : 'No portfolios found for this user'
+    });
+  } catch (error: any) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Error fetching portfolios',
+      errorMessages: error.message || String(error),
+    });
+  }
+};
+
+
+export const createPortfolioController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(StatusCodes.UNAUTHORIZED).json({ 
+        success: false, 
+        message: 'Unauthorized' 
+      });
       return;
     }
 
     const data = req.body;
 
-    // multer stores files in req.files.image as an array (because you used .fields)
+    // Handle file uploads
     if (req.files && 'image' in req.files) {
       const imageFiles = (req.files as { [fieldname: string]: Express.Multer.File[] }).image;
       data.image = data.image || [];
-
       imageFiles.forEach(file => {
         const imageUrl = `/uploads/images/${file.filename}`;
         data.image.push(imageUrl);
@@ -56,19 +88,57 @@ export const createOrUpdatePortfolio = async (req: Request, res: Response): Prom
       return;
     }
 
-    const portfolio = await portfolioService.createOrUpdatePortfolio(userId, data);
+    // DO NOT check for existing portfolios by userId - allow multiple portfolios
+    // Only check for duplicate names if you want unique names per user (optional)
+    /*
+    const existingPortfolio = await Portfolio.findOne({ 
+      userId, 
+      name: data.name.trim() 
+    });
+    if (existingPortfolio) {
+      res.status(StatusCodes.CONFLICT).json({
+        success: false,
+        message: "You already have a portfolio with this name."
+      });
+      return;
+    }
+    */
 
-    res.status(StatusCodes.OK).json({ success: true, data: portfolio });
+    const portfolio = await createPortfolio(userId, data);
+    
+    res.status(StatusCodes.CREATED).json({ 
+      success: true, 
+      data: portfolio,
+      message: 'Portfolio created successfully'
+    });
   } catch (error: any) {
+    console.error('Portfolio creation error:', error);
+    
+    // Handle MongoDB duplicate key errors
+    if (error.code === 11000) {
+      const duplicateField = Object.keys(error.keyPattern || {})[0];
+      let message = 'Duplicate entry detected.';
+      
+      if (duplicateField === 'userId') {
+        message = 'Database configuration error. Please contact support.';
+      } else if (duplicateField === 'name') {
+        message = 'A portfolio with this name already exists.';
+      }
+      
+      res.status(StatusCodes.CONFLICT).json({
+        success: false,
+        message: message,
+      });
+      return;
+    }
+
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
-      message: 'Error saving portfolio',
+      message: 'Error creating portfolio',
       errorMessages: error.message || String(error),
     });
   }
 };
-
-
 //delete portfolio
 export const deletePortfolio = async (req: Request, res: Response): Promise<void> => {
   try {
