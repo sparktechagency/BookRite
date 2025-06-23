@@ -359,31 +359,31 @@ const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
 const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const limit = parseInt(req.query.limit as string) || 5;
-    const userId = req.user?.id; 
+    const userId = req.user?.id;
 
-    let query = Servicewc.find()
-      .populate({
-        path: 'category',
-        select: 'CategoryName price image -_id User',
-        populate: {
-          path: 'User',
-          select: 'name',
-        },
-      })
-      .populate({
-        path: 'User',
-        select: 'name _id',
-      });
+  let query = Servicewc.find()
+  .populate({
+    path: 'category',
+    select: 'CategoryName price image -_id User',
+    populate: {
+      path: 'User',
+      select: 'name',
+    },
+  })
+  .populate({
+    path: 'userId',
+    select: 'name _id',
+  });
 
     const services = await query.exec();
 
-    const servicesWithRating = services.map(service => {
-      const obj: any = service.toObject();
+ const servicesWithRating = services.map(service => {
+  const obj: any = service.toObject();
 
-      if (obj.User) {
-        obj.serviceProvider = obj.User;
-        delete obj.User;
-      }
+  // 👇 Replace with correct mapping
+  if (obj.userId) {
+    obj.serviceProvider = obj.userId;
+  }
 
       let rating = 0;
       if (obj.reviews && obj.reviews.length > 0) {
@@ -395,28 +395,25 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
       obj.rating = rating;
       return obj;
     });
+
+    // ✅ Sort by rating and apply limit
     const sortedServices = servicesWithRating
       .sort((a, b) => b.rating - a.rating)
       .slice(0, limit);
 
     const serviceIds = sortedServices.map(s => s._id);
 
+    // ✅ Get bookmark counts
     const bookmarkCounts = await Bookmark.aggregate([
-      {
-        $match: { service: { $in: serviceIds } },
-      },
-      {
-        $group: {
-          _id: "$service",
-          count: { $sum: 1 },
-        },
-      },
+      { $match: { service: { $in: serviceIds } } },
+      { $group: { _id: "$service", count: { $sum: 1 } } },
     ]);
 
     const bookmarkCountMap = new Map(
       bookmarkCounts.map(item => [item._id.toString(), item.count])
     );
 
+    // ✅ Check which services the user has bookmarked
     let userBookmarkedIds = new Set<string>();
     if (userId) {
       const userBookmarks = await Bookmark.find({
@@ -429,14 +426,14 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
       );
     }
 
+    // ✅ Finalize processed services
     const processedServices = sortedServices.map(service => {
       const obj: any = service;
-
       obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
       obj.bookmark = userBookmarkedIds.has(service._id.toString());
-
       return obj;
     });
+
     res.status(200).json({
       success: true,
       message: 'Top rated services retrieved successfully',
@@ -450,6 +447,7 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
     });
   }
 };
+
 
 
 const updateServiceToDB = async (id: string, payload: IWcService) => {
