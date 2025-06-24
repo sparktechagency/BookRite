@@ -79,7 +79,7 @@ const createServiceToDB = async (payload: IWcService, userId: string): Promise<I
 
 const getServicesFromDB = async (req: any) => {
   const { filter, search } = req.query;
-  const userId = req.user?.id; // ✅ Get current user ID
+  const userId = req.user?.id;
 
   let query = Servicewc.find()
     .populate({
@@ -91,9 +91,10 @@ const getServicesFromDB = async (req: any) => {
       },
     })
     .populate({
-      path: 'User',
+      path: 'userId',
       select: 'name _id',
     })
+    
     .sort({ createdAt: -1 })
    
   // TODO: Apply filters/search here if needed
@@ -132,32 +133,34 @@ const getServicesFromDB = async (req: any) => {
   }
 
   // Build final response
-  const processedServices = services.map(service => {
-    const obj: any = service.toObject();
+const processedServices = services.map(service => {
+  const obj: any = service.toObject();
 
-    // Rename
-    if (obj.User) {
-      obj.serviceProvider = obj.User;
-      delete obj.User;
-    }
+  // Rename userId → serviceProvider
+  if (obj.userId && typeof obj.userId === 'object') {
+    obj.serviceProvider = {
+      _id: obj.userId._id,
+      name: obj.userId.name,
+    };
+  }
 
-    // Bookmark count
-    obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
+  // Remove raw userId field if not needed
+  delete obj.userId;
 
-    // ✅ Add bookmark: true/false
-    obj.bookmark = userBookmarkedIds.has(service._id.toString());
+  obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
+  obj.bookmark = userBookmarkedIds.has(service._id.toString());
 
-    // Rating
-    if (obj.reviews && obj.reviews.length > 0) {
-      const ratings = obj.reviews.map((r: any) => r.rating || 0);
-      const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
-      obj.rating = totalRating / ratings.length;
-    } else {
-      obj.rating = 0;
-    }
+  if (obj.reviews?.length > 0) {
+    const ratings = obj.reviews.map((r: any) => +r.rating || 0);
+    const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
+    obj.rating = totalRating / ratings.length;
+  } else {
+    obj.rating = 0;
+  }
 
-    return obj;
-  });
+  return obj;
+});
+
 
   return processedServices;
 };
