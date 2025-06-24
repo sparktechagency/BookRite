@@ -14,7 +14,7 @@ router.post("/",
             let image;
 
             if (req.files && 'image' in req.files && req.files.image[0]) {
-                image = `/images/${req.files.image[0].filename}`;
+                image = `/uploads/images/${req.files.image[0].filename}`;
             }
 
             req.body = { ...payload, image };
@@ -27,6 +27,6 @@ router.post("/",
     MessageController.sendMessage
 )
 router.patch("/:id/status", auth(USER_ROLES.USER), MessageController.responseOfferStatus)
-router.get("/:id", auth(USER_ROLES.USER), MessageController.getMessage)
+router.get("/:id", auth(USER_ROLES.USER, USER_ROLES.ADMIN), MessageController.getMessage)
 
 export const MessageRoutes = router;
