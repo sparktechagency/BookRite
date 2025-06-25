@@ -47,4 +47,4 @@ const responseOfferStatus = catchAsync(async(req: Request, res:Response)=>{
     })
 });
 
-export const MessageController = {sendMessage, getMessage, responseOfferStatus}
+export const MessageController = {sendMessage, getMessage, responseOfferStatus}     

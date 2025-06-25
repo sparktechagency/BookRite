@@ -294,8 +294,6 @@ const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
   return processedServices;
 };
 
-
-
 //  const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
 //   try {
 //     const limit = parseInt(req.query.limit as string) || 5;
