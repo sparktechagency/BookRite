@@ -1015,6 +1015,7 @@ export const getBookingsByServiceId = async (req: Request, res: Response): Promi
         success: false,
         message: "Service ID is required."
       });
+      return
     }
 
     // Validate serviceId is a valid ObjectId
@@ -1023,6 +1024,7 @@ export const getBookingsByServiceId = async (req: Request, res: Response): Promi
         success: false,
         message: "Invalid service ID format."
       });
+      return;
     }
 
     // Query bookings for the valid serviceId
@@ -1036,12 +1038,14 @@ export const getBookingsByServiceId = async (req: Request, res: Response): Promi
         success: false,
         message: "No bookings found for this service."
       });
+      return
     }
 
      res.status(StatusCodes.OK).json({
       success: true,
       data: bookings
     });
+    return
     
   } catch (error: any) {
     console.error("Error fetching bookings by serviceId:", error);
@@ -1050,6 +1054,7 @@ export const getBookingsByServiceId = async (req: Request, res: Response): Promi
       message: "An error occurred while fetching bookings for the service.",
       error: error.message || "Internal server error"
     });
+    return
   }
 };
 

@@ -62,7 +62,7 @@ const servicewcSchema = new Schema<IWcService, ServiceWcModel>(
     serviceProvider: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
   },
   },
   { timestamps: true }
