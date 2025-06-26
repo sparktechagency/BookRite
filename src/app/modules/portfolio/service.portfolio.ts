@@ -1,11 +1,14 @@
 import { IPortfolio } from './interface.porfolio';
 import Portfolio from './model.portfolio';
 
-export const getPortfolioByUserId = async (userId: string): Promise<IPortfolio | null> => {
-  return Portfolio.findOne({ userId });
-};
-export const getPortfoliosByUserId = async (userId: string): Promise<IPortfolio[]> => {
+// Fetch all portfolios by userId
+export const getPortfolioByUserId = async (userId: string): Promise<IPortfolio[]> => {
   return Portfolio.find({ userId });
+};
+
+// Delete a specific portfolio by ID (not by userId anymore)
+export const deletePortfolioById = async (portfolioId: string): Promise<IPortfolio | null> => {
+  return Portfolio.findByIdAndDelete(portfolioId);
 };
 
 
@@ -41,7 +44,6 @@ export const deletePortfolio = async (userId: string): Promise<IPortfolio | null
   return portfolio;
 } 
 
-//get portfolio by providerId
-export const getPortfolioByProviderId = async (providerId: string): Promise<IPortfolio | null> => {
-  return Portfolio.findOne({ userId: providerId});
+export const getPortfolioByProviderId = async (providerId: string): Promise<IPortfolio[]> => {
+  return Portfolio.find({ userId: providerId });
 };

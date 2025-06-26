@@ -11,8 +11,7 @@ const portfolioSchema = new Schema<IPortfolio>(
   { timestamps: true }
 );
 
-// ✅ Keep this if you want to speed up queries, but NOT unique
-portfolioSchema.index({ userId: 1 });
+portfolioSchema.index({});
 
 const Portfolio: Model<IPortfolio> = mongoose.model<IPortfolio>('Portfolio', portfolioSchema);
 export default Portfolio

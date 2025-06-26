@@ -4,56 +4,35 @@ import { createPortfolio } from './service.portfolio';
 import { StatusCodes } from 'http-status-codes';
 
 export const getUserPortfolio = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: 'Unauthorized' });
-      return;
-    }
-
-    const portfolio = await portfolioService.getPortfolioByUserId(userId);
-    if (!portfolio) {
-      res.status(StatusCodes.NOT_FOUND).json({ success: false, message: 'Portfolio not found' });
-      return;
-    }
-
-    res.status(StatusCodes.OK).json({ success: true, data: portfolio });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: 'Error fetching portfolio',
-      errorMessages: error.message || String(error),
-    });
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: 'Unauthorized' });
+    return;
   }
+
+  const portfolios = await portfolioService.getPortfolioByUserId(userId);
+  res.status(StatusCodes.OK).json({
+    success: true,
+    data: portfolios,
+    message: portfolios.length > 0 ? 'Portfolios fetched successfully' : 'No portfolios found'
+  });
 };
+
 export const getUserPortfolios = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userId = req.user?.id;
-    if (!userId) {
-      res.status(StatusCodes.UNAUTHORIZED).json({ 
-        success: false, 
-        message: 'Unauthorized' 
-      });
-      return;
-    }
-
-    const portfolios = await portfolioService.getPortfoliosByUserId(userId);
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      data: portfolios,
-      message: portfolios.length > 0 
-        ? 'Portfolios fetched successfully' 
-        : 'No portfolios found for this user'
-    });
-  } catch (error: any) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-      success: false,
-      message: 'Error fetching portfolios',
-      errorMessages: error.message || String(error),
-    });
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: 'Unauthorized' });
+    return;
   }
+
+  const portfolios = await portfolioService.getPortfolioByUserId(userId);
+  res.status(StatusCodes.OK).json({
+    success: true,
+    data: portfolios,
+    message: portfolios.length > 0 ? 'Portfolios fetched successfully' : 'No portfolios found'
+  });
 };
+
 
 
 export const createPortfolioController = async (req: Request, res: Response): Promise<void> => {
@@ -115,22 +94,20 @@ export const createPortfolioController = async (req: Request, res: Response): Pr
     console.error('Portfolio creation error:', error);
     
     // Handle MongoDB duplicate key errors
-    if (error.code === 11000) {
-      const duplicateField = Object.keys(error.keyPattern || {})[0];
-      let message = 'Duplicate entry detected.';
-      
-      if (duplicateField === 'userId') {
-        message = 'Database configuration error. Please contact support.';
-      } else if (duplicateField === 'name') {
-        message = 'A portfolio with this name already exists.';
-      }
-      
-      res.status(StatusCodes.CONFLICT).json({
-        success: false,
-        message: message,
-      });
-      return;
-    }
+if (error.code === 11000) {
+  const duplicateField = Object.keys(error.keyPattern || {})[0];
+  let message = 'Duplicate entry detected.';
+
+  if (duplicateField === 'name') {
+    message = 'A portfolio with this name already exists.';
+  }
+
+  res.status(StatusCodes.CONFLICT).json({
+    success: false,
+    message: message,
+  });
+  return;
+}
 
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,

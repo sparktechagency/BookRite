@@ -112,48 +112,140 @@ const deleteServiceToDB = async (id: string): Promise<IService | null> => {
 
 //   return result;
 // }
-const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): Promise<IWcService[]> => {
-  // Validate categoryId
+const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): Promise<any[]> => {
   if (!categoryId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Category ID is required');
   }
 
-  // Find services by category with basic fields
+  // Step 1: Find all services in the category with required fields populated
   const services = await Servicewc.find({ category: categoryId })
     .sort({ createdAt: -1 })
-    .select('image serviceName rating location price category userId')
     .populate('category', 'CategoryName image')
+    .populate('reviews.user', 'name') // Optionally populate user name in reviews
     .lean();
 
-  // If no services found, return empty array
   if (!services.length) {
     return [];
   }
 
-  // Get bookmark status for each service (if userId provided)
+  const serviceIds = services.map(service => service._id);
+
+  // Step 2: If user is logged in, fetch their bookmarks
+  let bookmarkMap = new Map<string, boolean>();
   if (userId) {
-    const serviceIds = services.map((service: { _id: any }) => service._id);
-    const userBookmarks = await Bookmark.find({
+    const bookmarks = await Bookmark.find({
       user: userId,
       service: { $in: serviceIds }
     }).lean();
 
-    const bookmarkMap = new Map(
-      userBookmarks.map(bookmark => [bookmark.service.toString(), true])
-    );
-
-    // Add bookmark status to each service
-     services.map((service: { _id: { toString: () => string } }) => ({
-      ...service,
-      isBookmarked: bookmarkMap.has(service._id.toString())
-    }));
+    bookmarkMap = new Map(bookmarks.map(bookmark => [bookmark.service.toString(), true]));
   }
 
-  return services.map((service: any) => ({
-    ...service,
-    isBookmarked: false
-  }));
+  // Step 3: Fetch bookmark counts for each service
+  const bookmarkCounts = await Bookmark.aggregate([
+    { $match: { service: { $in: serviceIds } } },
+    { $group: { _id: '$service', count: { $sum: 1 } } }
+  ]);
+
+  const bookmarkCountMap = new Map(
+    bookmarkCounts.map(item => [item._id.toString(), item.count])
+  );
+
+  // Step 4: Map all final service data including computed fields
+  return services.map(service => {
+    // Destructure and reconstruct only the fields defined in IWcService
+    const {
+      _id,
+      userId,
+      serviceName,
+      serviceDescription,
+      image,
+      price,
+      category,
+      location,
+      reviews = [],
+      createdAt,
+      updatedAt,
+      __v
+    } = service;
+
+    // Optionally compute average rating from reviews
+    const rating =
+      Array.isArray(reviews) && reviews.length > 0
+        ? reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) / reviews.length
+        : 0;
+
+    // Map reviews to plain objects if needed
+    const mappedReviews = Array.isArray(reviews)
+      ? reviews.map((review: any) => ({
+          user: review.user?._id || review.user, // populate or plain
+          comment: review.comment,
+          rating: review.rating
+        }))
+      : [];
+
+    return {
+      _id,
+      userId,
+      serviceName,
+      serviceDescription,
+      image,
+      price,
+      category,
+      location,
+      rating,
+      reviews: mappedReviews,
+      createdAt,
+      updatedAt,
+      __v,
+      bookmark: bookmarkMap.get(service._id.toString()) || false,
+      bookmarkCount: bookmarkCountMap.get(service._id.toString()) || 0
+    };
+  });
 };
+
+// const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): Promise<IWcService[]> => {
+//   // Validate categoryId
+//   if (!categoryId) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Category ID is required');
+//   }
+
+//   // Find services by category with basic fields
+//   const services = await Servicewc.find({ category: categoryId })
+//     .sort({ createdAt: -1 })
+//     .select('image serviceName rating location price category userId')
+//     .populate('category', 'CategoryName image')
+//     .lean();
+
+//   // If no services found, return empty array
+//   if (!services.length) {
+//     return [];
+//   }
+
+//   // Get bookmark status for each service (if userId provided)
+//   if (userId) {
+//     const serviceIds = services.map((service: { _id: any }) => service._id);
+//     const userBookmarks = await Bookmark.find({
+//       user: userId,
+//       service: { $in: serviceIds }
+//     }).lean();
+
+//     const bookmarkMap = new Map(
+//       userBookmarks.map(bookmark => [bookmark.service.toString(), true])
+//     );
+
+//     // Add bookmark status to each service
+//      services.map((service: { _id: { toString: () => string } }) => ({
+//       ...service,
+//       isBookmarked: bookmarkMap.has(service._id.toString())
+//     }));
+//   }
+
+//   return services.map((service: any) => ({
+//     ...service,
+//     isBookmarked: false
+//   }));
+// };
 
 export const ServiceServices = {
   createServiceToDB,
