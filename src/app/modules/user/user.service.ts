@@ -296,6 +296,25 @@ const getNearbyUsers = async (userId: string) => {
   return nearbyUsers;
 };
 
+const deleteUserFromDB = async (user: JwtPayload, password: string) => {
+
+    const isExistUser = await User.findById(user.id).select('+password');
+    if (!isExistUser) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+    }
+    if (typeof isExistUser.password !== 'string') {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "User password is not set!");
+    }
+    if (password && !(await User.isMatchPassword(password, isExistUser.password))) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect');
+    }
+
+    const updateUser = await User.findByIdAndDelete(user.id);
+    if (!updateUser) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+    }
+    return;
+};
 
  export const UserService = {
   createUserToDB,
@@ -307,5 +326,6 @@ const getNearbyUsers = async (userId: string) => {
   resendOtp,
   updateUserLocation,
   getUsersWithLocationAccess,
-  getNearbyUsers
+  getNearbyUsers,
+  deleteUserFromDB
 };

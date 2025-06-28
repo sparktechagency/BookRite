@@ -3,6 +3,11 @@ import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { UserService } from './user.service';
+import AppError from '../../../errors/ApiError';
+import { User } from './user.model';
+import jwt from 'jsonwebtoken';
+import { USER_ROLES } from '../../../enums/user';
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'your_default_jwt_secret_key';
 
 const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -139,4 +144,79 @@ const resendOtp = catchAsync(
     res.status(500).json({ error: error.message });
   }
 };
-export const UserController = { createUser, createAdmin, getUserProfile, updateProfile,createSuperAdmin, resendOtp,getUsersWithLocationController, updateUserLocationController };
+const deleteUser = catchAsync(async (req: Request, res: Response) => {
+    const result = await UserService.deleteUserFromDB(req.user, req.body.password);
+
+    sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: 'Account Deleted successfully',
+        data: result
+    });
+});
+
+export const googleLoginOrRegister = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { googleId, fullName, email } = req.body;
+
+    if (!googleId || !email || !fullName) {
+      throw new AppError(400, 'Missing Google credentials');
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        fullName,
+        email,
+        googleId,
+        isVerified: true,
+        isRestricted: false,
+        role: USER_ROLES.USER, 
+      });
+    }
+
+    const token = jwt.sign({ userId: user._id }, JWT_SECRET_KEY, {
+      expiresIn: '20d',
+    });
+
+    res.status(user.isNew ? 201 : 200).json({
+      status: 'success',
+      message: user.isNew
+        ? 'User registered successfully with Google.'
+        : 'User logged in successfully with Google.',
+      data: {
+        user,
+        token,
+      },
+    });
+  } catch (error) {
+    console.error('Error during Google login or registration:', error);
+    if (error instanceof AppError) {
+      res
+        .status(error.statusCode)
+        .json({ status: 'error', message: error.message });
+    } else {
+      res.status(500).json({
+        status: 'error',
+        message: 'Internal Server Error. Please try again later.',
+      });
+    }
+  }
+};
+export const UserController = { 
+  createUser,
+   createAdmin, 
+   getUserProfile, 
+   updateProfile,
+   createSuperAdmin,
+   resendOtp,
+   getUsersWithLocationController, 
+   updateUserLocationController,
+   deleteUser,
+   googleLoginOrRegister
+  };

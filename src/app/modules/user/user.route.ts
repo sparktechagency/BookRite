@@ -2,7 +2,7 @@ import express from 'express';
 import { USER_ROLES } from '../../../enums/user';
 import auth from '../../middlewares/auth';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
-import { UserController } from './user.controller';
+import { googleLoginOrRegister, UserController } from './user.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import { UserValidation } from './user.validation';
 const router = express.Router();
@@ -13,6 +13,8 @@ router.get(
   UserController.getUserProfile
 );
 
+router.post('/google-auth', googleLoginOrRegister);
+
 router.post(
   '/create-admin',
   validateRequest(UserValidation.createAdminZodSchema),
@@ -22,6 +24,12 @@ router.post(
   '/create-super-admin',
   validateRequest(UserValidation.createAdminZodSchema),
   UserController.createSuperAdmin
+);
+
+router.delete(
+    '/delete-account',
+    auth(USER_ROLES.ADMIN,USER_ROLES.USER),
+    UserController.deleteUser
 );
 
 router
