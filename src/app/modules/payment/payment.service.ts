@@ -37,8 +37,8 @@
 //         quantity: 1,
 //       },
 //     ],
-//     success_url: `${process.env.CLIENT_URL}/booking-success?bookingId=${booking._id}`,
-//     cancel_url: `${process.env.CLIENT_URL}/booking-cancel?bookingId=${booking._id}`,
+    // success_url: `${process.env.CLIENT_URL}/booking-success?bookingId=${booking._id}`,
+    // cancel_url: `${process.env.CLIENT_URL}/booking-cancel?bookingId=${booking._id}`,
 //     metadata: {
 //       bookingId: booking._id.toString(),
 //     },
@@ -153,7 +153,7 @@ unit_amount: Math.round(priceNumber * 100)
       serviceProviderId: booking.serviceProviderId ? booking.serviceProviderId.toString() : ''
     },
     mode: 'payment',
-    success_url: `${config.stripe.clientUrl}/bookings/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${config.stripe.clientUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${config.stripe.clientUrl}/bookings/${booking._id}`,
   });
 

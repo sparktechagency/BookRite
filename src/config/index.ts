@@ -37,7 +37,7 @@ export default {
    stripe_api_secret: process.env.STRIPE_API_KEY,
    clientUrl: process.env.CLIENT_URL,
    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    paymentSuccess: `${process.env.CLIENT_URL}/payment/success`,
+    paymentSuccess: `${process.env.CLIENT_URL}/payment-success`,
     paymentCancel: `${process.env.CLIENT_URL}/payment/cancel`
 }
 
