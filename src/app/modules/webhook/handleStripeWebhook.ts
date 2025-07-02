@@ -60,7 +60,53 @@ import { PaymentService } from '../payment/payment.service';
 
 //     res.sendStatus(200); // Send success response
 // };
-export const unifiedStripeWebhookHandler = async (req: Request, res: Response) =>{
+
+// export const unifiedStripeWebhookHandler = async (req: Request, res: Response): Promise<void> => {
+//   let event: Stripe.Event;
+
+//   try {
+//     event = stripe.webhooks.constructEvent(
+//       req.body,
+//       req.headers['stripe-signature'] as string,
+//       config.stripe.webhookSecret as string
+//     );
+//   } catch (err) {
+//     console.error(`Webhook signature verification failed: ${err}`);
+//     res.status(400).send(`Webhook Error: ${err}`);
+//     return;
+//   }
+
+//   try {
+//     switch (event.type) {
+//       case 'checkout.session.completed': {
+//         const session = event.data.object as Stripe.Checkout.Session;
+//         await PaymentService.handlePaymentSuccess(session);
+//         break;
+//       }
+
+//       case 'customer.subscription.created': {
+//         const subscription = event.data.object as Stripe.Subscription;
+//         await handleSubscriptionCreated(subscription);
+//         break;
+//       }
+
+//       case 'charge.refunded': {
+//         const charge = event.data.object as Stripe.Charge;
+//         await PaymentService.handleRefundSuccess(charge);
+//         break;
+//       }
+
+//       default:
+//         logger.warn(colors.bgGreen.bold(`Unhandled event type: ${event.type}`));
+//     }
+
+//     res.status(200).json({ received: true });
+//   } catch (err) {
+//     console.error(`Error processing webhook event: ${err}`);
+//     res.status(500).json({ error: 'Webhook processing failed' });
+//   }
+// };
+export const unifiedStripeWebhookHandler = async (req: Request, res: Response): Promise<void> => {
   let event: Stripe.Event;
 
   try {
@@ -71,29 +117,42 @@ export const unifiedStripeWebhookHandler = async (req: Request, res: Response) =
     );
   } catch (err) {
     console.error(`Webhook signature verification failed: ${err}`);
-    return res.status(400).send(`Webhook Error: ${err}`);
+    res.status(400).send(`Webhook Error: ${err}`);
+    return;
   }
 
   try {
     switch (event.type) {
-      case 'checkout.session.completed':
+      case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         await PaymentService.handlePaymentSuccess(session);
         break;
-
-      case 'customer.subscription.created':
+      }
+      case 'customer.subscription.created': {
         const subscription = event.data.object as Stripe.Subscription;
         await handleSubscriptionCreated(subscription);
         break;
-
-      case 'charge.refunded':
+      }
+      case 'charge.refunded': {
         const charge = event.data.object as Stripe.Charge;
         await PaymentService.handleRefundSuccess(charge);
         break;
-
-      // Add other event types you want to handle here
+      }
+      case 'payment_method.attached':
+      case 'customer.created':
+      case 'customer.updated':
+      case 'payment_intent.succeeded':
+      case 'payment_intent.created':
+      case 'charge.succeeded':
+      case 'invoice.created':
+      case 'invoice.finalized':
+      case 'invoice.paid':
+      case 'invoice.payment_succeeded': {
+        console.log(`Received event: ${event.type} - No action required`);
+        break;
+      }
       default:
-        logger.warn(colors.bgGreen.bold(`Unhandled event type: ${event.type}`));
+        console.warn(`Unhandled event type: ${event.type}`);
     }
 
     res.status(200).json({ received: true });
@@ -102,5 +161,6 @@ export const unifiedStripeWebhookHandler = async (req: Request, res: Response) =
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 };
+
 
 export default unifiedStripeWebhookHandler;

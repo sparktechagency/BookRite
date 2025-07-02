@@ -59,14 +59,15 @@ import ApiError from '../../../errors/ApiError';
 import { Booking } from '../booking/booking.model';
 import { User } from '../user/user.model';
 import { Servicewc } from '../service/serviceswc.model'; 
+import { Package } from '../package/package.model';
+import { v4 as uuidv4 } from 'uuid';
+import { Subscription } from '../subscription/subscription.model';
 
 const stripe = new Stripe(config.stripe.stripe_api_secret as string, {
  apiVersion: "2025-04-30.basil",
 });
 
-
 const createPaymentSession = async (bookingId: string, user: any) => {
-  // Find the booking
   const booking = await Booking.findById(bookingId)
     .populate('serviceId')
     .populate('serviceProviderId');
@@ -75,102 +76,89 @@ const createPaymentSession = async (bookingId: string, user: any) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
   }
 
-  // Check if booking belongs to current user
   if (booking.userId.toString() !== user._id.toString()) {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Not authorized to pay for this booking');
   }
 
-  // Check if booking is already paid
   if (booking.paymentStatus === 'Paid') {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Booking is already paid');
   }
 
-const service = booking.serviceId as any;
-const priceNumber = Number(service.price);
+  const service = booking.serviceId as any;
+  const priceNumber = Number(service.price);
 
-if (isNaN(priceNumber) || priceNumber <= 0) {
-  throw new ApiError(StatusCodes.BAD_REQUEST, 'Service price is invalid or missing');
-}
-unit_amount: Math.round(priceNumber * 100)
+  if (isNaN(priceNumber) || priceNumber <= 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Service price is invalid or missing');
+  }
 
-  // Create or get Stripe customer
-  let customerId = '';
   const currentUser = await User.findById(user._id);
-
   if (!currentUser) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
   }
 
-  if (currentUser.stripeCustomerId) {
-    customerId = currentUser.stripeCustomerId;
-  } else {
-    // Create a new customer in Stripe
+  // Create Stripe customer if not exists
+  let customerId = currentUser.stripeCustomerId;
+  if (!customerId) {
     const customer = await stripe.customers.create({
       email: currentUser.email,
       name: currentUser.name || undefined,
       metadata: {
-        userId: currentUser._id.toString()
-      }
+        userId: currentUser._id.toString(),
+      },
     });
-    
     customerId = customer.id;
-    
-    // Update user with Stripe customer ID
     currentUser.stripeCustomerId = customerId;
     await currentUser.save();
   }
 
-  // Format date for display
-  const bookingDate = new Date(booking.bookingDate).toLocaleDateString('en-US', {
+  const bookingDate = new Date(booking.bookingDate).toLocaleString('en-US', {
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    hour12: true,
   });
 
-  // Create a checkout session
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
+    mode: 'payment',
     customer: customerId,
-   line_items: [
-    {
-      price_data: {
-        currency: 'usd',
-        product_data: {
-          name: `${service.serviceName || 'Service'} Booking`,
-          description: `Booking for ${service.serviceName || 'service'} on ${bookingDate} at ${booking.location}`,
-          images: service.images && service.images.length > 0 ? [service.images[0]] : undefined,
+    line_items: [
+      {
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${service.serviceName || 'Service'} Booking`,
+            description: `Booking on ${bookingDate}`,
+            images: service.images?.length ? [service.images[0]] : undefined,
+          },
+          unit_amount: Math.round(priceNumber * 100),
         },
-        unit_amount: Math.round(priceNumber * 100), // amount in cents as integer
+        quantity: 1,
       },
-      quantity: 1,
-    },
-  ],
+    ],
     metadata: {
       bookingId: booking._id.toString(),
       userId: user._id.toString(),
-      serviceProviderId: booking.serviceProviderId ? booking.serviceProviderId.toString() : ''
+      serviceProviderId: typeof booking.serviceProviderId === 'object' && booking.serviceProviderId !== null && '_id' in booking.serviceProviderId
+        ? (booking.serviceProviderId as any)._id.toString()
+        : booking.serviceProviderId?.toString() || '',
     },
-    mode: 'payment',
     success_url: `${config.stripe.clientUrl}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${config.stripe.clientUrl}/bookings/${booking._id}`,
   });
 
-  // Update booking with session ID
   booking.paymentSessionId = session.id;
   await booking.save();
 
   return {
     sessionId: session.id,
-    url: session.url
+    url: session.url,
   };
 };
 
-/**
- * Get payment status for a booking
- * @param bookingId The ID of the booking to check payment status
- */
+
 const getPaymentStatus = async (bookingId: string) => {
   const booking = await Booking.findById(bookingId);
   
@@ -218,10 +206,6 @@ const getPaymentStatus = async (bookingId: string) => {
   }
 };
 
-/**
- * Handle successful payment webhook from Stripe
- * @param session Stripe Checkout Session object
- */
 const handlePaymentSuccess = async (session: Stripe.Checkout.Session) => {
   try {
     const bookingId = session.metadata?.bookingId;
@@ -256,10 +240,7 @@ const handlePaymentSuccess = async (session: Stripe.Checkout.Session) => {
   }
 };
 
-/**
- * Create a refund for a booking
- * @param bookingId The ID of the booking to refund
- */
+
 const createRefund = async (bookingId: string) => {
   const booking = await Booking.findById(bookingId);
   
@@ -312,10 +293,7 @@ const createRefund = async (bookingId: string) => {
   }
 };
 
-/**
- * Handle refund success webhook from Stripe
- * @param charge Stripe Charge object
- */
+
 const handleRefundSuccess = async (charge: Stripe.Charge) => {
   try {
     // Find the related payment intent
@@ -366,10 +344,11 @@ const handleRefundSuccess = async (charge: Stripe.Charge) => {
   }
 };
 
+
 export const PaymentService = {
   createPaymentSession,
   getPaymentStatus,
   handlePaymentSuccess,
   createRefund,
-  handleRefundSuccess
+  handleRefundSuccess,
 };

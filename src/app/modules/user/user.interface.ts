@@ -1,45 +1,55 @@
+
 // import { Model, Types } from 'mongoose';
 // import { USER_ROLES } from '../../../enums/user';
 
 // export type IUser = {
-//   passwordHash: string;
-  
+//   service: Types.ObjectId;
+//   save(): unknown;
 //   name: string;
 //   appId: string;
+//   gender?: string;
 //   role: USER_ROLES;
 //   contact: string;
 //   dateOfBirth: string;
 //   email: string;
 //   password?: string;
-//   location: string;
+//     location?: {
+//         type: string;
+//         coordinates: number[];
+//     };
+//     company?: string;
 //   profile?: string;
-//   post?: Types.ObjectId,
+//   post?: Types.ObjectId;
 //   verified: boolean;
 //   authentication?: {
 //     isResetPassword: boolean;
 //     oneTimeCode: number;
 //     expireAt: Date;
 //   };
+//  isSubscribed: boolean;
 //   accountInformation?: {
 //     status: boolean;
 //     stripeAccountId: string;
 //     externalAccountId: string;
 //     currency: string;
 //   };
+//   totalService:Number,
+//   stripeCustomerId?: string;
+//   createdAt: Date;
 // };
 
 // export type UserModal = {
-//   isExistUserById(id: string): any;
-//   isExistUserByEmail(email: string): any;
-//   isAccountCreated(id: string): any;
-//   isMatchPassword(password: string, hashPassword: string): boolean;
+//   isExistUserById(id: string): Promise<IUser | null>;
+//   isExistUserByEmail(email: string): Promise<IUser | null>;
+//   isAccountCreated(id: string): Promise<boolean>;
+//   isMatchPassword(password: string, hashPassword: string): Promise<boolean>;
 // } & Model<IUser>;
-
-import { Model, Types } from 'mongoose';
+import { Schema, Types, Model } from 'mongoose';
 import { USER_ROLES } from '../../../enums/user';
 
 export type IUser = {
-  service: Types.ObjectId;
+  _id: Schema.Types.ObjectId; // Use Schema.Types.ObjectId
+  service: Schema.Types.ObjectId;
   save(): unknown;
   name: string;
   appId: string;
@@ -49,26 +59,27 @@ export type IUser = {
   dateOfBirth: string;
   email: string;
   password?: string;
-    location?: {
-        type: string;
-        coordinates: number[];
-    };
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
+  company?: string;
   profile?: string;
-  post?: Types.ObjectId;
+  post?: Schema.Types.ObjectId;
   verified: boolean;
   authentication?: {
     isResetPassword: boolean;
     oneTimeCode: number;
     expireAt: Date;
   };
- isSubscribed: boolean;
+  isSubscribed: boolean;
   accountInformation?: {
     status: boolean;
     stripeAccountId: string;
     externalAccountId: string;
     currency: string;
   };
-  totalService:Number,
+  totalService: number;
   stripeCustomerId?: string;
   createdAt: Date;
 };
@@ -79,3 +90,18 @@ export type UserModal = {
   isAccountCreated(id: string): Promise<boolean>;
   isMatchPassword(password: string, hashPassword: string): Promise<boolean>;
 } & Model<IUser>;
+
+export type IPackage = {
+  _id: Schema.Types.ObjectId; // Use Schema.Types.ObjectId
+  title: string;
+  description: string[];
+  price: number;
+  priceId?: string;
+  duration: '1 month' | '3 months' | '6 months' | '1 year';
+  paymentType: 'Monthly' | 'Yearly';
+  productId: string;
+  credit: number;
+  paymentLink: string;
+  status: 'Active' | 'Delete';
+  createdAt: Date;
+};

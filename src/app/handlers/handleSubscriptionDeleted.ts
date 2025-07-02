@@ -7,10 +7,8 @@ import { User } from '../modules/user/user.model';
 
 export const handleSubscriptionDeleted = async (data: Stripe.Subscription) => {
 
-    // Retrieve the subscription from Stripe
     const subscription = await stripe.subscriptions.retrieve(data.id);
 
-    // Find the current active subscription
     const userSubscription:any = await Subscription.findOne({
         customerId: subscription.customer,
         status: 'active',
@@ -18,7 +16,6 @@ export const handleSubscriptionDeleted = async (data: Stripe.Subscription) => {
 
     if (userSubscription) {
 
-        // Deactivate the subscription
         await Subscription.findByIdAndUpdate(
             userSubscription._id,
             { status: 'deactivated' },
