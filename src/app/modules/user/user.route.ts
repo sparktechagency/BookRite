@@ -2,7 +2,8 @@ import express from 'express';
 import { USER_ROLES } from '../../../enums/user';
 import auth from '../../middlewares/auth';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
-import { googleLoginOrRegister, UserController } from './user.controller';
+import { googleAuthLoginFirebase, googleLoginOrRegister, UserController } from './user.controller';
+import { Request, Response } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import { UserValidation } from './user.validation';
 const router = express.Router();
@@ -14,6 +15,7 @@ router.get(
 );
 
 router.post('/google-auth', googleLoginOrRegister);
+router.post('/google-authFirebase', googleAuthLoginFirebase);
 
 router.post(
   '/create-admin',

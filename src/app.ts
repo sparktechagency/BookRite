@@ -10,9 +10,9 @@ import handleStripeWebhook, { unifiedStripeWebhookHandler } from './app/modules/
 import auth from './app/middlewares/auth';
 import { User } from './app/modules/user/user.model';
 const app = express();
-app.get('/', (req, res) => {
-  res.send('Server is running');
-});
+// app.get('/', (req, res) => {
+//   res.send('Server is running');
+// });
 
 // app.post('/api/v1/webhook', express.raw({ type: 'application/json' }), PaymentController.handleStripeWebhooks); 
 app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), unifiedStripeWebhookHandler);

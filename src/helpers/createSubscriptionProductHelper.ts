@@ -108,7 +108,7 @@ export const createSubscriptionProduct = async (payload: Partial<IPackage>): Pro
             break;
         default:
             interval = 'month';
-            intervalCount = 1; // Defaults to 1 month if duration is not specified
+            intervalCount = 1; 
     }
 
 

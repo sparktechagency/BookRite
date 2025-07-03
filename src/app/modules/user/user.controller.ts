@@ -7,6 +7,7 @@ import AppError from '../../../errors/ApiError';
 import { User } from './user.model';
 import jwt from 'jsonwebtoken';
 import { USER_ROLES } from '../../../enums/user';
+import { IUser } from './user.interface';
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'your_default_jwt_secret_key';
 
 const createUser = catchAsync(
@@ -208,6 +209,56 @@ export const googleLoginOrRegister = async (
     }
   }
 };
+
+export const googleAuthLoginFirebase = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email, name, profile } = req.body;
+
+    if (!email) {
+       res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'Email is required',
+      });
+      return;
+    }
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      const newUser: Partial<IUser> = {
+        email,
+        name: name || '',
+        profile: profile || '',
+        role: USER_ROLES.USER, 
+        verified: true,
+      };
+
+      user = await User.create(newUser);
+    }
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'User logged in successfully',
+      data: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profile: user.profile,
+      },
+    });
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Failed to login',
+    });
+  }
+};
+
 export const UserController = { 
   createUser,
    createAdmin, 
@@ -218,5 +269,6 @@ export const UserController = {
    getUsersWithLocationController, 
    updateUserLocationController,
    deleteUser,
-   googleLoginOrRegister
+   googleLoginOrRegister,
+   googleAuthLoginFirebase
   };
