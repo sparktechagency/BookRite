@@ -35,7 +35,7 @@ router.get(
 
 router.get(
   '/highest-rated',
-  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+  auth(),
     ServiceWcController.getHighestRated,
 );
 router.get(
