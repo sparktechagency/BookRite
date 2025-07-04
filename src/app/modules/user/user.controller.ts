@@ -167,13 +167,14 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-export const googleLoginOrRegisterV2 = async (
+export const googleLoginOrRegisterDebug = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
     console.log('[GoogleLogin] Incoming body:', req.body);
+    console.log('[GoogleLogin] Headers:', req.headers);
 
     const { idToken } = req.body;
 
@@ -200,14 +201,12 @@ export const googleLoginOrRegisterV2 = async (
     const { sub: googleId, email, name: fullName } = payload;
     console.log(`[GoogleLogin] ✅ User info extracted: email=${email}, name=${fullName}, googleId=${googleId}`);
 
-    // Find user exactly like your normal login (with +password +role)
     let isExistUser = await User.findOne({ email }).select('+password +role');
     let isNewUser = false;
 
     if (!isExistUser) {
       console.log('[GoogleLogin] 🔄 No user found. Creating new user...');
       
-      // Create user with all required fields
       isExistUser = await User.create({
         fullName,
         email,
@@ -217,14 +216,24 @@ export const googleLoginOrRegisterV2 = async (
         status: 'active',
         role: 'user',
         authProvider: 'google',
-        // Don't set password for Google users
       });
       isNewUser = true;
-      console.log('[GoogleLogin] ✅ New user created:', isExistUser);
+      console.log('[GoogleLogin] ✅ New user created with fields:', {
+        _id: isExistUser._id,
+        email: isExistUser.email,
+        role: isExistUser.role,
+        status: isExistUser.status,
+        verified: isExistUser.verified
+      });
     } else {
-      console.log('[GoogleLogin] ✅ Existing user found:', isExistUser.email);
+      console.log('[GoogleLogin] ✅ Existing user found with fields:', {
+        _id: isExistUser._id,
+        email: isExistUser.email,
+        role: isExistUser.role,
+        status: isExistUser.status,
+        verified: isExistUser.verified
+      });
       
-      // All the same checks as your normal login
       if (!isExistUser.verified) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Please verify your account first!');
       }
@@ -237,14 +246,24 @@ export const googleLoginOrRegisterV2 = async (
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Your account has been blocked.');
       }
 
-      // Update Google ID if not present
       if (!isExistUser.googleId) {
         isExistUser.googleId = googleId;
         await isExistUser.save();
       }
     }
 
-    // Create token exactly like your normal login
+    // Debug JWT creation
+    console.log('[GoogleLogin] 🔍 JWT config:', {
+      jwt_secret: config.jwt.jwt_secret ? 'EXISTS' : 'MISSING',
+      jwt_expire_in: config.jwt.jwt_expire_in
+    });
+
+    console.log('[GoogleLogin] 🔍 Token payload to be signed:', {
+      id: isExistUser._id,
+      role: isExistUser.role,
+      email: isExistUser.email
+    });
+
     const createToken = jwtHelper.createToken(
       { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
       config.jwt.jwt_secret as Secret,
@@ -252,14 +271,17 @@ export const googleLoginOrRegisterV2 = async (
     );
 
     console.log('[GoogleLogin] ✅ JWT created:', createToken);
-    console.log('[GoogleLogin] ✅ Token payload will be:', {
-      id: isExistUser._id,
-      role: isExistUser.role,
-      email: isExistUser.email
-    });
+    console.log('[GoogleLogin] ✅ JWT length:', createToken.length);
 
-    // Response exactly like your normal login
-    res.status(isNewUser ? StatusCodes.CREATED : StatusCodes.OK).json({
+    // Test JWT decoding
+    try {
+      const decoded = jwtHelper.verifyToken(createToken, config.jwt.jwt_secret as Secret);
+      console.log('[GoogleLogin] ✅ JWT verification test passed:', decoded);
+    } catch (jwtError) {
+      console.error('[GoogleLogin] ❌ JWT verification test failed:', jwtError);
+    }
+
+    const responseData = {
       success: true,
       statusCode: isNewUser ? StatusCodes.CREATED : StatusCodes.OK,
       message: isNewUser 
@@ -270,9 +292,20 @@ export const googleLoginOrRegisterV2 = async (
         role: isExistUser.role,
         user: isExistUser,
       },
+    };
+
+    console.log('[GoogleLogin] ✅ Sending response:', {
+      statusCode: responseData.statusCode,
+      message: responseData.message,
+      tokenLength: createToken.length,
+      userRole: isExistUser.role,
+      userId: isExistUser._id
     });
+
+    res.status(isNewUser ? StatusCodes.CREATED : StatusCodes.OK).json(responseData);
   } catch (error: any) {
     console.error('[GoogleLogin] ❌ Error:', error.message || error);
+    console.error('[GoogleLogin] ❌ Full error:', error);
     next(error);
   }
 };
@@ -341,6 +374,6 @@ export const UserController = {
    updateUserLocationController,
    deleteUser,
   //  googleLoginOrRegister,
-   googleLoginOrRegisterV2,
+   googleLoginOrRegisterDebug,
    googleAuthLoginFirebase
   };

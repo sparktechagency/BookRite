@@ -2,7 +2,7 @@ import express from 'express';
 import { USER_ROLES } from '../../../enums/user';
 import auth from '../../middlewares/auth';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
-import { googleAuthLoginFirebase, googleLoginOrRegisterV2, UserController } from './user.controller';
+import { googleAuthLoginFirebase, googleLoginOrRegisterDebug, UserController } from './user.controller';
 import { Request, Response } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import { UserValidation } from './user.validation';
@@ -14,7 +14,7 @@ router.get(
   UserController.getUserProfile
 );
 
-router.post('/google-auth', googleLoginOrRegisterV2);
+router.post('/google-auth', googleLoginOrRegisterDebug);
 router.post('/google-authFirebase', googleAuthLoginFirebase);
 
 router.post(
