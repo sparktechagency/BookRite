@@ -116,7 +116,7 @@ export const createSubscriptionProduct = async (payload: Partial<IPackage>): Pro
     const price = await stripe.prices.create({
         product: product.id,
         unit_amount: Number(payload.price) * 100, // in cents
-        currency: 'usd', // or your chosen currency
+        currency: 'usd', 
         recurring: { interval, interval_count: intervalCount },
     });
 

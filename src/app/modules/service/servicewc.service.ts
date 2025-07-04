@@ -362,29 +362,18 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
     const limit = parseInt(req.query.limit as string) || 5;
     const userId = req.user?.id;
 
-  let query = Servicewc.find()
-  .populate({
-    path: 'category',
-    select: 'CategoryName price image -_id User',
-    populate: {
-      path: 'User',
-      select: 'name',
-    },
-  })
-  .populate({
-    path: 'userId',
-    select: 'name _id',
-  });
+    let query = Servicewc.find()
+      .populate('category', 'CategoryName price image') // ✅ clean category population
+      .populate('userId', 'name _id rating'); // ✅ make sure provider is included
 
     const services = await query.exec();
 
- const servicesWithRating = services.map(service => {
-  const obj: any = service.toObject();
+    // ✅ Calculate rating per service
+    const servicesWithRating = services.map(service => {
+      const obj: any = service.toObject();
 
-  // 👇 Replace with correct mapping
-  if (obj.userId) {
-    obj.serviceProvider = obj.userId;
-  }
+      const serviceProvider = obj.userId || null;
+      obj.serviceProvider = serviceProvider; 
 
       let rating = 0;
       if (obj.reviews && obj.reviews.length > 0) {
@@ -397,7 +386,7 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
       return obj;
     });
 
-    // ✅ Sort by rating and apply limit
+    // ✅ Sort and limit
     const sortedServices = servicesWithRating
       .sort((a, b) => b.rating - a.rating)
       .slice(0, limit);
@@ -407,14 +396,11 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
     // ✅ Get bookmark counts
     const bookmarkCounts = await Bookmark.aggregate([
       { $match: { service: { $in: serviceIds } } },
-      { $group: { _id: "$service", count: { $sum: 1 } } },
+      { $group: { _id: '$service', count: { $sum: 1 } } },
     ]);
+    const bookmarkCountMap = new Map(bookmarkCounts.map(item => [item._id.toString(), item.count]));
 
-    const bookmarkCountMap = new Map(
-      bookmarkCounts.map(item => [item._id.toString(), item.count])
-    );
-
-    // ✅ Check which services the user has bookmarked
+    // ✅ Get user bookmarks if logged in
     let userBookmarkedIds = new Set<string>();
     if (userId) {
       const userBookmarks = await Bookmark.find({
@@ -422,17 +408,14 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
         service: { $in: serviceIds },
       }).select('service');
 
-      userBookmarkedIds = new Set(
-        userBookmarks.map(b => b.service.toString())
-      );
+      userBookmarkedIds = new Set(userBookmarks.map(b => b.service.toString()));
     }
 
-    // ✅ Finalize processed services
+    // ✅ Finalize
     const processedServices = sortedServices.map(service => {
-      const obj: any = service;
-      obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
-      obj.bookmark = userBookmarkedIds.has(service._id.toString());
-      return obj;
+      service.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
+      service.bookmark = userBookmarkedIds.has(service._id.toString());
+      return service;
     });
 
     res.status(200).json({
@@ -448,6 +431,7 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
     });
   }
 };
+
 
 
 

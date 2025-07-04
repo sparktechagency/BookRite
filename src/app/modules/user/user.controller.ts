@@ -8,6 +8,12 @@ import { User } from './user.model';
 import jwt from 'jsonwebtoken';
 import { USER_ROLES } from '../../../enums/user';
 import { IUser } from './user.interface';
+import { token } from 'morgan';
+import { OAuth2Client } from 'google-auth-library';
+
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'your_default_jwt_secret_key';
 
 const createUser = catchAsync(
@@ -162,11 +168,25 @@ export const googleLoginOrRegister = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { googleId, fullName, email } = req.body;
+    const { idToken } = req.body;
 
-    if (!googleId || !email || !fullName) {
-      throw new AppError(400, 'Missing Google credentials');
+    if (!idToken) {
+      throw new AppError(400, 'Missing Google ID token');
     }
+
+    // Verify token with Google
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: GOOGLE_CLIENT_ID, // Ensure this matches the frontend client ID
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email || !payload.name || !payload.sub) {
+      throw new AppError(400, 'Invalid Google token');
+    }
+
+    const { sub: googleId, email, name: fullName } = payload;
 
     let user = await User.findOne({ email });
 
@@ -177,7 +197,7 @@ export const googleLoginOrRegister = async (
         googleId,
         isVerified: true,
         isRestricted: false,
-        role: USER_ROLES.USER, 
+        role: USER_ROLES.USER,
       });
     }
 
@@ -249,6 +269,9 @@ export const googleAuthLoginFirebase = async (
         email: user.email,
         role: user.role,
         profile: user.profile,
+        token: jwt.sign({ userId: user._id }, JWT_SECRET_KEY, {
+          expiresIn: '20d',
+        }),
       },
     });
   } catch (error) {

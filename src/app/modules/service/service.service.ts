@@ -62,6 +62,7 @@ const getServicesFromDB = async (req: any): Promise<IService[]> => {
     const result = await query;
     return result;
   }
+
 const updateServiceToDB = async (id: string, payload: IService) => {
   const isExistService: any = await Service.findById(id);
 
@@ -117,11 +118,11 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Category ID is required');
   }
 
-  // Step 1: Find all services in the category with required fields populated
   const services = await Servicewc.find({ category: categoryId })
     .sort({ createdAt: -1 })
     .populate('category', 'CategoryName image')
-    .populate('reviews.user', 'name') // Optionally populate user name in reviews
+    .populate('reviews.user', 'name')
+    .populate('userId', 'name rating')
     .lean();
 
   if (!services.length) {
@@ -130,7 +131,6 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
 
   const serviceIds = services.map(service => service._id);
 
-  // Step 2: If user is logged in, fetch their bookmarks
   let bookmarkMap = new Map<string, boolean>();
   if (userId) {
     const bookmarks = await Bookmark.find({
@@ -141,7 +141,6 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
     bookmarkMap = new Map(bookmarks.map(bookmark => [bookmark.service.toString(), true]));
   }
 
-  // Step 3: Fetch bookmark counts for each service
   const bookmarkCounts = await Bookmark.aggregate([
     { $match: { service: { $in: serviceIds } } },
     { $group: { _id: '$service', count: { $sum: 1 } } }
@@ -151,9 +150,7 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
     bookmarkCounts.map(item => [item._id.toString(), item.count])
   );
 
-  // Step 4: Map all final service data including computed fields
   return services.map(service => {
-    // Destructure and reconstruct only the fields defined in IWcService
     const {
       _id,
       userId,
@@ -169,16 +166,14 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
       __v
     } = service;
 
-    // Optionally compute average rating from reviews
     const rating =
       Array.isArray(reviews) && reviews.length > 0
         ? reviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) / reviews.length
         : 0;
 
-    // Map reviews to plain objects if needed
     const mappedReviews = Array.isArray(reviews)
       ? reviews.map((review: any) => ({
-          user: review.user?._id || review.user, // populate or plain
+          user: review.user?._id || review.user,
           comment: review.comment,
           rating: review.rating
         }))
@@ -186,7 +181,7 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
 
     return {
       _id,
-      userId,
+      serviceProvider: userId, 
       serviceName,
       serviceDescription,
       image,
@@ -203,6 +198,7 @@ const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): 
     };
   });
 };
+
 
 // const getServiceByCategoryFromDB = async (categoryId: string, userId?: string): Promise<IWcService[]> => {
 //   // Validate categoryId

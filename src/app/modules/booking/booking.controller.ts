@@ -16,6 +16,7 @@ import { Notification } from "../notification/notification.model";
 import { USER_ROLES } from "../../../enums/user";
 import { Availability } from "./aviliability.model";
 import { checkSlotAvailability } from "./aviliability.controller";
+import { date } from "zod";
 
 
 
@@ -709,8 +710,7 @@ const getUserBookings = async (req: Request, res: Response): Promise<void> => {
 
     if (!bookings || bookings.length === 0) {
        res.status(StatusCodes.NOT_FOUND).json({
-        success: false,
-        message: 'No bookings found for this user.',
+      date:[]
       });
       return;
     }

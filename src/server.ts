@@ -88,7 +88,7 @@ process.on('uncaughtException', error => {
 });
 
 let server: any;
-let io: Server;
+// let io: Server;
 
 // Extend NodeJS.Global to include 'io'
 declare global {
@@ -142,6 +142,7 @@ async function main() {
 //   } catch (error) {
 //     errorLogger.error(colors.red('🤢 Failed to connect Database'), error);
 //   }
+
  const port =
       typeof config.port === 'number' ? config.port : Number(config.port);
 
