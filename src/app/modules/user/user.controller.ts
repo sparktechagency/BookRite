@@ -10,6 +10,7 @@ import { USER_ROLES } from '../../../enums/user';
 import { IUser } from './user.interface';
 import { token } from 'morgan';
 import { OAuth2Client } from 'google-auth-library';
+import ApiError from '../../../errors/ApiError';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -171,19 +172,17 @@ export const googleLoginOrRegister = async (
     const { idToken } = req.body;
 
     if (!idToken) {
-      throw new AppError(400, 'Missing Google ID token');
+      throw new ApiError(400, 'Missing Google ID token');
     }
 
-    // Verify token with Google
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: GOOGLE_CLIENT_ID, // Ensure this matches the frontend client ID
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
-
     if (!payload || !payload.email || !payload.name || !payload.sub) {
-      throw new AppError(400, 'Invalid Google token');
+      throw new ApiError(400, 'Invalid Google token');
     }
 
     const { sub: googleId, email, name: fullName } = payload;
@@ -197,13 +196,21 @@ export const googleLoginOrRegister = async (
         googleId,
         isVerified: true,
         isRestricted: false,
-        role: USER_ROLES.USER,
+        role: 'user',
       });
     }
 
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET_KEY, {
-      expiresIn: '20d',
-    });
+    const token = jwt.sign(
+      {
+        id: user._id,
+        role: user.role,
+        email: user.email,
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '20d' }
+    );
+
+    console.log('[GoogleLogin] Created token:', token);
 
     res.status(user.isNew ? 201 : 200).json({
       status: 'success',
@@ -216,17 +223,8 @@ export const googleLoginOrRegister = async (
       },
     });
   } catch (error) {
-    console.error('Error during Google login or registration:', error);
-    if (error instanceof AppError) {
-      res
-        .status(error.statusCode)
-        .json({ status: 'error', message: error.message });
-    } else {
-      res.status(500).json({
-        status: 'error',
-        message: 'Internal Server Error. Please try again later.',
-      });
-    }
+    console.error('[GoogleLogin] Error:', error);
+    next(error);
   }
 };
 
