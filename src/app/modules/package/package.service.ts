@@ -85,20 +85,46 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
 
 
 
-const updatePackageToDB = async (id: string, payload: Partial<IPackage>): Promise<IPackage | null> => {
+// const updatePackageToDB = async (id: string, payload: Partial<IPackage>): Promise<IPackage | null> => {
 
-    if(!mongoose.Types.ObjectId.isValid(id)){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
-    }
+//     if(!mongoose.Types.ObjectId.isValid(id)){
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
+//     }
 
-    const result = await Package.findByIdAndUpdate(id, payload, { new: true })
+//     const result = await Package.findByIdAndUpdate(id, payload, { new: true })
 
 
-    if(!result){
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to Update Package");
-    }
+//     if(!result){
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to Update Package");
+//     }
 
-    return result;
+//     return result;
+// };
+const updatePackageToDB = async (
+  id: string,
+  payload: Partial<IPackage>
+): Promise<IPackage | null> => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid ID');
+  }
+
+  // 🛠 Fix string input for description
+  if (payload.description && Array.isArray(payload.description)) {
+    payload.description = payload.description.join('\n');
+  }
+
+  console.log('Final payload going into DB:', payload);
+
+  const result = await Package.findByIdAndUpdate(id, payload, {
+    new: true,
+    runValidators: true, 
+  });
+
+  if (!result) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to Update Package');
+  }
+
+  return result;
 };
 
 
