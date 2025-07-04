@@ -25,21 +25,16 @@ export default {
     email: process.env.ADMIN_EMAIL,
     password: process.env.ADMIN_PASSWORD
   },
-  // stripe: {
-  //   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  //   paymentSuccess: process.env.PAYMENT_SUCCESS,
-  //   stripe_api_secret: process.env.STRIPE_API_KEY,
-  //   clientUrl: process.env.CLIENT_URL,
-  //   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  // },
-  stripe: {
-   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-   stripe_api_secret: process.env.STRIPE_API_KEY,
-   clientUrl: process.env.CLIENT_URL,
-   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    paymentSuccess: `${process.env.CLIENT_URL}/payment-success`,
-    paymentCancel: `${process.env.CLIENT_URL}/payment/cancel`
-}
+
+stripe: {
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  stripe_api_secret: process.env.STRIPE_API_KEY,
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+  clientUrl: process.env.FRONTEND_URL, 
+  paymentSuccess: `${process.env.FRONTEND_URL}/payment-success`,
+  paymentCancel: `${process.env.FRONTEND_URL}/payment/cancel`,
+},
+
 
 
 };
