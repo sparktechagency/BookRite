@@ -14,7 +14,7 @@ router.get(
   UserController.getUserProfile
 );
 
-router.post('/google-auth', googleLoginOrRegister);
+// router.post('/google-auth', googleLoginOrRegister);
 router.post('/google-authFirebase', googleAuthLoginFirebase);
 
 router.post(
