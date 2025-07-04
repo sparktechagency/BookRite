@@ -169,11 +169,16 @@ export const googleLoginOrRegister = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log('[GoogleLogin] Incoming body:', req.body);
+
     const { idToken } = req.body;
 
     if (!idToken) {
+      console.warn('[GoogleLogin] ❌ Missing Google ID token from frontend.');
       throw new ApiError(400, 'Missing Google ID token');
     }
+
+    console.log('[GoogleLogin] ✅ Received ID token. Verifying...');
 
     const ticket = await client.verifyIdToken({
       idToken,
@@ -181,15 +186,20 @@ export const googleLoginOrRegister = async (
     });
 
     const payload = ticket.getPayload();
+    console.log('[GoogleLogin] ✅ Token payload:', payload);
+
     if (!payload || !payload.email || !payload.name || !payload.sub) {
+      console.warn('[GoogleLogin] ❌ Invalid Google token structure:', payload);
       throw new ApiError(400, 'Invalid Google token');
     }
 
     const { sub: googleId, email, name: fullName } = payload;
+    console.log(`[GoogleLogin] ✅ User info extracted: email=${email}, name=${fullName}, googleId=${googleId}`);
 
     let user = await User.findOne({ email });
 
     if (!user) {
+      console.log('[GoogleLogin] 🔄 No user found. Creating new user...');
       user = await User.create({
         fullName,
         email,
@@ -198,6 +208,8 @@ export const googleLoginOrRegister = async (
         isRestricted: false,
         role: 'user',
       });
+    } else {
+      console.log('[GoogleLogin] ✅ Existing user found:', user.email);
     }
 
     const token = jwt.sign(
@@ -210,7 +222,7 @@ export const googleLoginOrRegister = async (
       { expiresIn: '20d' }
     );
 
-    console.log('[GoogleLogin] Created token:', token);
+    console.log('[GoogleLogin] ✅ JWT created:', token);
 
     res.status(user.isNew ? 201 : 200).json({
       status: 'success',
@@ -222,8 +234,8 @@ export const googleLoginOrRegister = async (
         token,
       },
     });
-  } catch (error) {
-    console.error('[GoogleLogin] Error:', error);
+  } catch (error: any) {
+    console.error('[GoogleLogin] ❌ Error:', error.message || error);
     next(error);
   }
 };
