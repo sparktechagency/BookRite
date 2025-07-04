@@ -15,7 +15,7 @@ router.get(
 );
 
 // router.post('/google-auth', googleLoginOrRegister);
-router.post('/google-authFirebase', googleAuthLoginFirebase);
+// router.post('/google-authFirebase', googleAuthLoginFirebase);
 
 router.post(
   '/create-admin',
