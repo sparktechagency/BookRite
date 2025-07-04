@@ -167,7 +167,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-export const googleLoginOrRegister = async (
+export const googleLoginOrRegisterV2 = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -200,71 +200,75 @@ export const googleLoginOrRegister = async (
     const { sub: googleId, email, name: fullName } = payload;
     console.log(`[GoogleLogin] ✅ User info extracted: email=${email}, name=${fullName}, googleId=${googleId}`);
 
-    // Find user with role information (same as your normal login)
-    let user = await User.findOne({ email }).select('+role');
+    // Find user exactly like your normal login (with +password +role)
+    let isExistUser = await User.findOne({ email }).select('+password +role');
     let isNewUser = false;
 
-    if (!user) {
+    if (!isExistUser) {
       console.log('[GoogleLogin] 🔄 No user found. Creating new user...');
-      user = await User.create({
+      
+      // Create user with all required fields
+      isExistUser = await User.create({
         fullName,
         email,
         googleId,
+        verified: true,
         isVerified: true,
-        verified: true, // Add both fields to be safe
-        isRestricted: false,
+        status: 'active',
         role: 'user',
-        status: 'active', // Make sure status is set
         authProvider: 'google',
+        // Don't set password for Google users
       });
       isNewUser = true;
-      console.log('[GoogleLogin] ✅ New user created:', user);
+      console.log('[GoogleLogin] ✅ New user created:', isExistUser);
     } else {
-      console.log('[GoogleLogin] ✅ Existing user found:', user.email);
+      console.log('[GoogleLogin] ✅ Existing user found:', isExistUser.email);
       
-      // Check user status (same checks as your normal login)
-      if (user.status === 'delete') {
+      // All the same checks as your normal login
+      if (!isExistUser.verified) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Please verify your account first!');
+      }
+
+      if (isExistUser.status === 'delete') {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Your account has been deactivated.');
       }
 
-      if (user.status === 'block') {
+      if (isExistUser.status === 'block') {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Your account has been blocked.');
       }
 
       // Update Google ID if not present
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.verified = true;
-        await user.save();
+      if (!isExistUser.googleId) {
+        isExistUser.googleId = googleId;
+        await isExistUser.save();
       }
     }
 
-    // Use your existing JWT helper (same as normal login)
+    // Create token exactly like your normal login
     const createToken = jwtHelper.createToken(
-      { id: user._id, role: user.role, email: user.email },
+      { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
       config.jwt.jwt_secret as Secret,
       config.jwt.jwt_expire_in as string
     );
 
-    console.log('[GoogleLogin] ✅ JWT created using jwtHelper:', createToken);
-    console.log('[GoogleLogin] ✅ User data being returned:', {
-      id: user._id,
-      role: user.role,
-      email: user.email,
-  
+    console.log('[GoogleLogin] ✅ JWT created:', createToken);
+    console.log('[GoogleLogin] ✅ Token payload will be:', {
+      id: isExistUser._id,
+      role: isExistUser.role,
+      email: isExistUser.email
     });
 
-    // Use your existing response format
+    // Response exactly like your normal login
     res.status(isNewUser ? StatusCodes.CREATED : StatusCodes.OK).json({
       success: true,
       statusCode: isNewUser ? StatusCodes.CREATED : StatusCodes.OK,
-      message: isNewUser
+      message: isNewUser 
         ? 'User registered successfully with Google'
         : 'User login successfully with Google',
       data: {
-        Token: createToken, // Use same key as your normal login
-        role: user.role,
-        user: user,
+        Token: createToken,
+        role: isExistUser.role,
+        user: isExistUser,
       },
     });
   } catch (error: any) {
@@ -336,6 +340,7 @@ export const UserController = {
    getUsersWithLocationController, 
    updateUserLocationController,
    deleteUser,
-   googleLoginOrRegister,
+  //  googleLoginOrRegister,
+   googleLoginOrRegisterV2,
    googleAuthLoginFirebase
   };
