@@ -5,12 +5,14 @@ import sendResponse from '../../../shared/sendResponse';
 import { UserService } from './user.service';
 import AppError from '../../../errors/ApiError';
 import { User } from './user.model';
-import jwt from 'jsonwebtoken';
+import jwt, { Secret } from 'jsonwebtoken';
 import { USER_ROLES } from '../../../enums/user';
 import { IUser } from './user.interface';
 import { token } from 'morgan';
 import { OAuth2Client } from 'google-auth-library';
 import ApiError from '../../../errors/ApiError';
+import { jwtHelper } from '../../../helpers/jwtHelper';
+import config from '../../../config';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const client = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -152,6 +154,7 @@ const resendOtp = catchAsync(
     res.status(500).json({ error: error.message });
   }
 };
+
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
     const result = await UserService.deleteUserFromDB(req.user, req.body.password);
 
@@ -162,6 +165,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
         data: result
     });
 });
+
 
 export const googleLoginOrRegister = async (
   req: Request,
@@ -175,7 +179,7 @@ export const googleLoginOrRegister = async (
 
     if (!idToken) {
       console.warn('[GoogleLogin] ❌ Missing Google ID token from frontend.');
-      throw new ApiError(400, 'Missing Google ID token');
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing Google ID token');
     }
 
     console.log('[GoogleLogin] ✅ Received ID token. Verifying...');
@@ -190,13 +194,15 @@ export const googleLoginOrRegister = async (
 
     if (!payload || !payload.email || !payload.name || !payload.sub) {
       console.warn('[GoogleLogin] ❌ Invalid Google token structure:', payload);
-      throw new ApiError(400, 'Invalid Google token');
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Google token');
     }
 
     const { sub: googleId, email, name: fullName } = payload;
     console.log(`[GoogleLogin] ✅ User info extracted: email=${email}, name=${fullName}, googleId=${googleId}`);
 
-    let user = await User.findOne({ email });
+    // Find user with role information (same as your normal login)
+    let user = await User.findOne({ email }).select('+role');
+    let isNewUser = false;
 
     if (!user) {
       console.log('[GoogleLogin] 🔄 No user found. Creating new user...');
@@ -205,33 +211,60 @@ export const googleLoginOrRegister = async (
         email,
         googleId,
         isVerified: true,
+        verified: true, // Add both fields to be safe
         isRestricted: false,
         role: 'user',
+        status: 'active', // Make sure status is set
+        authProvider: 'google',
       });
+      isNewUser = true;
+      console.log('[GoogleLogin] ✅ New user created:', user);
     } else {
       console.log('[GoogleLogin] ✅ Existing user found:', user.email);
+      
+      // Check user status (same checks as your normal login)
+      if (user.status === 'delete') {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Your account has been deactivated.');
+      }
+
+      if (user.status === 'block') {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Your account has been blocked.');
+      }
+
+      // Update Google ID if not present
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.verified = true;
+        await user.save();
+      }
     }
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        role: user.role,
-        email: user.email,
-      },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '20d' }
+    // Use your existing JWT helper (same as normal login)
+    const createToken = jwtHelper.createToken(
+      { id: user._id, role: user.role, email: user.email },
+      config.jwt.jwt_secret as Secret,
+      config.jwt.jwt_expire_in as string
     );
 
-    console.log('[GoogleLogin] ✅ JWT created:', token);
+    console.log('[GoogleLogin] ✅ JWT created using jwtHelper:', createToken);
+    console.log('[GoogleLogin] ✅ User data being returned:', {
+      id: user._id,
+      role: user.role,
+      email: user.email,
+  
+    });
 
-    res.status(user.isNew ? 201 : 200).json({
-      status: 'success',
-      message: user.isNew
-        ? 'User registered successfully with Google.'
-        : 'User logged in successfully with Google.',
+    // Use your existing response format
+    res.status(isNewUser ? StatusCodes.CREATED : StatusCodes.OK).json({
+      success: true,
+      statusCode: isNewUser ? StatusCodes.CREATED : StatusCodes.OK,
+      message: isNewUser
+        ? 'User registered successfully with Google'
+        : 'User login successfully with Google',
       data: {
-        user,
-        token,
+        Token: createToken, // Use same key as your normal login
+        role: user.role,
+        user: user,
       },
     });
   } catch (error: any) {
@@ -239,6 +272,7 @@ export const googleLoginOrRegister = async (
     next(error);
   }
 };
+
 
 export const googleAuthLoginFirebase = async (
   req: Request,

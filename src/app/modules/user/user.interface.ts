@@ -57,6 +57,8 @@ export type IUser = {
   role: USER_ROLES;
   contact: string;
   dateOfBirth: string;
+  status?: 'active' | 'delete' | 'block';
+  googleId?: string;
   email: string;
   password?: string;
   location?: {

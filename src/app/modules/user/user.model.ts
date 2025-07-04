@@ -17,6 +17,16 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       required: false,
     },
+    googleId: {
+      type: String,
+      required: false,
+      unique: true, 
+    },
+    status: {
+      type: String,
+      enum: ['active', 'delete', 'block'],
+      default: 'active',
+    },
     gender: {
       type: String,
       required: false,
