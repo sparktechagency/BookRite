@@ -15,7 +15,7 @@ import { jwtHelper } from '../../../helpers/jwtHelper';
 import config from '../../../config';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const client = new OAuth2Client(GOOGLE_CLIENT_ID);
+
 
 const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || 'your_default_jwt_secret_key';
 
@@ -166,261 +166,131 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+// JWT token generation
+const generateTokens = (userId: string) => {
+  const payload = {
+    userId,
+    type: 'access',
+    iat: Math.floor(Date.now() / 1000),
+  };
 
+  const accessToken = jwt.sign(payload, config.jwt.jwt_secret || JWT_SECRET_KEY, {
+    expiresIn: config.jwt.jwt_expire_in,
+  });
 
-export const googleLoginOrRegister = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+  const refreshSecret = process.env.JWT_REFRESH_SECRET || 'your_default_refresh_secret';
+  const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+
+  const refreshToken = jwt.sign(
+    { userId, type: 'refresh' },
+    refreshSecret,
+    { expiresIn: refreshExpiresIn },
+  );
+
+  return { accessToken, refreshToken };
+};
+
+// Google OAuth2 client setup
+const client = new OAuth2Client();
+export const googleLoginOrRegister = async (req: Request, res: Response) => {
   try {
-    console.log('\n=== GOOGLE AUTH DEBUG START ===');
-    console.log('[GoogleLogin] 📥 Incoming request:');
-    console.log('[GoogleLogin] - Method:', req.method);
-    console.log('[GoogleLogin] - URL:', req.url);
-    console.log('[GoogleLogin] - Headers:', JSON.stringify(req.headers, null, 2));
-    console.log('[GoogleLogin] - Body:', JSON.stringify(req.body, null, 2));
-
     const { idToken } = req.body;
 
     if (!idToken) {
-      console.warn('[GoogleLogin] ❌ Missing Google ID token from frontend.');
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Missing Google ID token');
+      return sendResponse(res, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        success: false,
+        message: 'Google ID token is required',
+      });
     }
 
-    console.log('[GoogleLogin] ✅ Received ID token:', idToken.substring(0, 50) + '...');
-
-    // Verify Google token
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: [
+        process.env.GOOGLE_CLIENT_ID_ANDROID || '',
+        process.env.GOOGLE_CLIENT_ID_IOS || '',
+        process.env.GOOGLE_CLIENT_ID_WEB || '',
+      ],
     });
 
     const payload = ticket.getPayload();
-    console.log('[GoogleLogin] ✅ Google token payload:', JSON.stringify(payload, null, 2));
-
-    if (!payload || !payload.email || !payload.name || !payload.sub) {
-      console.warn('[GoogleLogin] ❌ Invalid Google token structure:', payload);
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Google token');
+    if (!payload) {
+      return sendResponse(res, {
+        statusCode: StatusCodes.UNAUTHORIZED,
+        success: false,
+        message: 'Invalid Google token payload',
+      });
     }
 
-    const { sub: googleId, email, name } = payload;
-    console.log('[GoogleLogin] ✅ Extracted user info:');
-    console.log(`[GoogleLogin] - email: ${email}`);
-    console.log(`[GoogleLogin] - name: ${name}`);
-    console.log(`[GoogleLogin] - googleId: ${googleId}`);
+    const {
+      sub: googleId,
+      email,
+      name: fullName,
+      picture: image,
+      email_verified: emailVerified,
+    } = payload;
 
-    // Find existing user
-    let isExistUser = await User.findOne({ email }).select('+password +role');
-    let isNewUser = false;
+    if (!emailVerified) {
+      return sendResponse(res, {
+        statusCode: StatusCodes.BAD_REQUEST,
+        success: false,
+        message: 'Google email not verified',
+      });
+    }
 
-    console.log('[GoogleLogin] 🔍 Database query result:', isExistUser ? 'USER FOUND' : 'USER NOT FOUND');
+    let user = await User.findOne({ googleId });
+    const isNewUser = !user;
 
-    if (!isExistUser) {
-      console.log('[GoogleLogin] 🔄 Creating new user...');
-      
-      const newUserData = {
-        name,
-        email,
+    if (!user) {
+      user = await User.create({
         googleId,
-        verified: true,
+        fullName: fullName || '',
+        email: email || '',
+        image: image || '',
         isVerified: true,
-        status: 'active',
-        role: 'user',
-        authProvider: 'google',
-      };
-      
-      console.log('[GoogleLogin] 📝 New user data:', JSON.stringify(newUserData, null, 2));
-      
-      isExistUser = await User.create(newUserData);
-      isNewUser = true;
-      
-      console.log('[GoogleLogin] ✅ New user created:');
-      console.log(`[GoogleLogin] - _id: ${isExistUser._id}`);
-      console.log(`[GoogleLogin] - email: ${isExistUser.email}`);
-      console.log(`[GoogleLogin] - role: ${isExistUser.role}`);
-      console.log(`[GoogleLogin] - status: ${isExistUser.status}`);
-      console.log(`[GoogleLogin] - verified: ${isExistUser.verified}`);
+        isRestricted: false,
+        role: USER_ROLES.USER,
+      });
     } else {
-      console.log('[GoogleLogin] ✅ Existing user found:');
-      console.log(`[GoogleLogin] - _id: ${isExistUser._id}`);
-      console.log(`[GoogleLogin] - email: ${isExistUser.email}`);
-      console.log(`[GoogleLogin] - role: ${isExistUser.role}`);
-      console.log(`[GoogleLogin] - status: ${isExistUser.status}`);
-      console.log(`[GoogleLogin] - verified: ${isExistUser.verified}`);
-      console.log(`[GoogleLogin] - googleId: ${isExistUser.googleId}`);
-      
-      // Status checks
-      if (!isExistUser.verified) {
-        console.log('[GoogleLogin] ❌ User not verified');
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Please verify your account first!');
-      }
-
-      if (isExistUser.status === 'delete') {
-        console.log('[GoogleLogin] ❌ User account deleted');
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Your account has been deactivated.');
-      }
-
-      if (isExistUser.status === 'block') {
-        console.log('[GoogleLogin] ❌ User account blocked');
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Your account has been blocked.');
-      }
-
-      // Update Google ID if not present
-      if (!isExistUser.googleId) {
-        console.log('[GoogleLogin] 🔄 Updating user with Google ID...');
-        isExistUser.googleId = googleId;
-        await isExistUser.save();
-        console.log('[GoogleLogin] ✅ Google ID updated');
-      }
+      user.name = fullName || '';
+      user.email = user.email || email || '';
+      user.verified = true;
+      await user.save();
     }
 
-    // JWT Creation
-    console.log('[GoogleLogin] 🔐 Creating JWT token...');
-    console.log('[GoogleLogin] 🔍 JWT config check:');
-    console.log(`[GoogleLogin] - jwt_secret exists: ${config.jwt.jwt_secret ? 'YES' : 'NO'}`);
-    console.log(`[GoogleLogin] - jwt_expire_in: ${config.jwt.jwt_expire_in}`);
+    const { accessToken, refreshToken } = generateTokens(user._id.toString());
 
-    const tokenPayload = {
-      id: isExistUser._id,
-      role: isExistUser.role,
-      email: isExistUser.email
-    };
-    
-    console.log('[GoogleLogin] 🔍 Token payload:', JSON.stringify(tokenPayload, null, 2));
+    await User.findByIdAndUpdate(user._id, {
+      $push: { refreshTokens: refreshToken },
+    });
 
-    const createToken = jwtHelper.createToken(
-      tokenPayload,
-      config.jwt.jwt_secret as Secret,
-      config.jwt.jwt_expire_in as string
-    );
-
-    console.log('[GoogleLogin] ✅ JWT created successfully');
-    console.log(`[GoogleLogin] - Token length: ${createToken.length}`);
-    console.log(`[GoogleLogin] - Token preview: ${createToken.substring(0, 50)}...`);
-
-    // Verify the token we just created
-    try {
-      const decoded = jwtHelper.verifyToken(createToken, config.jwt.jwt_secret as Secret);
-      console.log('[GoogleLogin] ✅ JWT verification test PASSED');
-      console.log('[GoogleLogin] 🔍 Decoded token:', JSON.stringify(decoded, null, 2));
-    } catch (jwtError) {
-      console.error('[GoogleLogin] ❌ JWT verification test FAILED:', jwtError);
-    }
-
-    // Prepare response
-    const responseData = {
-      success: true,
+    return sendResponse(res, {
       statusCode: isNewUser ? StatusCodes.CREATED : StatusCodes.OK,
-      message: isNewUser 
-        ? 'User registered successfully with Google'
-        : 'User login successfully with Google',
+      success: true,
+      message: isNewUser
+        ? 'User registered successfully with Google.'
+        : 'User logged in successfully with Google.',
       data: {
-        Token: createToken,
-        role: isExistUser.role,
+        tokens: { accessToken, refreshToken },
         user: {
-          _id: isExistUser._id,
-          name: isExistUser.name,
-          email: isExistUser.email,
-          role: isExistUser.role,
-          status: isExistUser.status,
-          verified: isExistUser.verified,
-          googleId: isExistUser.googleId
+          id: user._id,
+          googleId: user.googleId,
+          fullName: user.name,
+          email: user.email,
+          role: user.role,
+          isVerified: user.verified,
         },
       },
-    };
-
-    console.log('[GoogleLogin] 📤 Sending response:');
-    console.log(`[GoogleLogin] - Status Code: ${responseData.statusCode}`);
-    console.log(`[GoogleLogin] - Message: ${responseData.message}`);
-    console.log(`[GoogleLogin] - Token Key: "Token"`);
-    console.log(`[GoogleLogin] - Token Length: ${createToken.length}`);
-    console.log(`[GoogleLogin] - User Role: ${isExistUser.role}`);
-    console.log(`[GoogleLogin] - User ID: ${isExistUser._id}`);
-    console.log('[GoogleLogin] - Full Response:', JSON.stringify(responseData, null, 2));
-
-    res.status(isNewUser ? StatusCodes.CREATED : StatusCodes.OK).json(responseData);
-    
-    console.log('[GoogleLogin] ✅ Response sent successfully');
-    console.log('=== GOOGLE AUTH DEBUG END ===\n');
-
+    });
   } catch (error: any) {
-    console.error('\n❌ GOOGLE AUTH ERROR ❌');
-    console.error('[GoogleLogin] Error type:', error.constructor.name);
-    console.error('[GoogleLogin] Error message:', error.message);
-    console.error('[GoogleLogin] Error stack:', error.stack);
-    console.error('[GoogleLogin] Full error object:', JSON.stringify(error, null, 2));
-    console.error('=== GOOGLE AUTH ERROR END ===\n');
-    next(error);
+    console.error('Google login error:', error.message);
+    return sendResponse(res, {
+      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+      success: false,
+      message: 'Google authentication failed',
+    });
   }
 };
-
-// Also add this middleware to log all incoming requests
-export const logAllRequests = (req: Request, res: Response, next: NextFunction) => {
-  const timestamp = new Date().toISOString();
-  console.log(`\n📥 [${timestamp}] ${req.method} ${req.url}`);
-  console.log(`🔍 Headers:`, JSON.stringify(req.headers, null, 2));
-  
-  if (req.headers.authorization) {
-    console.log(`🔐 Authorization header found: ${req.headers.authorization.substring(0, 50)}...`);
-  } else {
-    console.log(`❌ No Authorization header found`);
-  }
-  
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log(`📝 Body:`, JSON.stringify(req.body, null, 2));
-  }
-  
-  next();
-};
-
-// Add this to your auth middleware to debug token verification
-export const debugAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    console.log(`\n🔒 AUTH MIDDLEWARE DEBUG - ${req.method} ${req.url}`);
-    console.log('🔍 Request headers:', JSON.stringify(req.headers, null, 2));
-    
-    const authHeader = req.headers.authorization;
-    console.log('🔍 Authorization header:', authHeader);
-    
-    if (!authHeader) {
-      console.log('❌ No authorization header found');
-      return res.status(401).json({ message: 'No authorization header' });
-    }
-    
-    if (!authHeader.startsWith('Bearer ')) {
-      console.log('❌ Invalid authorization format - should start with Bearer');
-      return res.status(401).json({ message: 'Invalid authorization format' });
-    }
-    
-    const token = authHeader.substring(7);
-    console.log('🔍 Extracted token:', token.substring(0, 50) + '...');
-    console.log('🔍 Token length:', token.length);
-    
-    // Verify token
-    const decoded = jwtHelper.verifyToken(token, config.jwt.jwt_secret as Secret);
-    console.log('✅ Token verified successfully');
-    console.log('🔍 Decoded payload:', JSON.stringify(decoded, null, 2));
-    
-    // Add user info to request
-    req.user = {
-      ...(decoded as object),
-      // Optionally, ensure all required fields are present
-      id: (decoded as any).id,
-      _id: (decoded as any)._id,
-      role: (decoded as any).role,
-      email: (decoded as any).email,
-    };
-    console.log('✅ User attached to request:', JSON.stringify(req.user, null, 2));
-    
-    next();
-  } catch (error: any) {
-    console.error('❌ AUTH MIDDLEWARE ERROR:', error.message);
-    console.error('❌ Full error:', error);
-    res.status(401).json({ message: 'You are not authorized' });
-  }
-};
-
 
 export const googleAuthLoginFirebase = async (
   req: Request,

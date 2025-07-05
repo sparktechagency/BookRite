@@ -35,6 +35,4 @@ stripe: {
   paymentCancel: `${process.env.FRONTEND_URL}/payment/cancel`,
 },
 
-
-
 };

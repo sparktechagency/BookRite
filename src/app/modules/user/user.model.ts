@@ -6,7 +6,7 @@ import { USER_ROLES } from '../../../enums/user';
 import ApiError from '../../../errors/ApiError';
 import { IUser, UserModal } from './user.interface';
 
-const userSchema = new Schema<IUser, UserModal>(
+const userSchema = new Schema<IUser>(
   {
     service: {
       type: Schema.Types.ObjectId,
@@ -133,7 +133,17 @@ isSubscribed: {
     createdAt: {
       type: Date,
       default: Date.now,
-    }
+    },
+    socialAccounts: {
+      google: {
+        id: { type: String, required: false },
+        email: { type: String, required: false },
+        name: { type: String, required: false },
+        avatar: { type: String, required: false },
+      },
+    },
+    avatar: { type: String, default: '' },
+    lastLoginAt: { type: Date, default: null },
   
   },
 
