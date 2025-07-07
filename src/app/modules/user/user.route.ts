@@ -2,7 +2,7 @@ import express from 'express';
 import { USER_ROLES } from '../../../enums/user';
 import auth from '../../middlewares/auth';
 import fileUploadHandler from '../../middlewares/fileUploadHandler';
-import { googleAuthLoginFirebase, googleLoginOrRegister, UserController } from './user.controller';
+import { googleAuthLoginFirebase, UserController } from './user.controller';
 import { Request, Response } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import { UserValidation } from './user.validation';
@@ -33,7 +33,9 @@ router.delete(
     auth(USER_ROLES.ADMIN,USER_ROLES.USER),
     UserController.deleteUser
 );
-
+router.delete(
+  '/deleteByUser',UserController.deleteUserByEmail
+)
 router
   .route('/')
   .post(

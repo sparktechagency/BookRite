@@ -131,7 +131,6 @@ export const socialLoginFromDB = async (payload: IUser) => {
       role: isExistUser.role,
     };
   } else {
-    // Validate name or email for new user
     if (!name && !email) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'At least one of name or email is required for new user');
     }
@@ -285,8 +284,6 @@ const loginUserFromDB = async (payload: ILoginData) => {
 
   return { createToken, role, user: isExistUser };
 };
-
-
 
 //forget password
 const forgetPasswordToDB = async (email: string) => {

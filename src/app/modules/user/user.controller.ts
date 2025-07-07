@@ -191,106 +191,106 @@ const generateTokens = (userId: string) => {
 };
 
 // Google OAuth2 client setup
-const client = new OAuth2Client();
-export const googleLoginOrRegister = async (req: Request, res: Response) => {
-  try {
-    const { idToken } = req.body;
+// const client = new OAuth2Client();
+// export const googleLoginOrRegister = async (req: Request, res: Response) => {
+//   try {
+//     const { idToken } = req.body;
 
-    if (!idToken) {
-      return sendResponse(res, {
-        statusCode: StatusCodes.BAD_REQUEST,
-        success: false,
-        message: 'Google ID token is required',
-      });
-    }
+//     if (!idToken) {
+//       return sendResponse(res, {
+//         statusCode: StatusCodes.BAD_REQUEST,
+//         success: false,
+//         message: 'Google ID token is required',
+//       });
+//     }
 
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: [
-        process.env.GOOGLE_CLIENT_ID_ANDROID || '',
-        process.env.GOOGLE_CLIENT_ID_IOS || '',
-        process.env.GOOGLE_CLIENT_ID_WEB || '',
-      ],
-    });
+//     const ticket = await client.verifyIdToken({
+//       idToken,
+//       audience: [
+//         process.env.GOOGLE_CLIENT_ID_ANDROID || '',
+//         process.env.GOOGLE_CLIENT_ID_IOS || '',
+//         process.env.GOOGLE_CLIENT_ID_WEB || '',
+//       ],
+//     });
 
-    const payload = ticket.getPayload();
-    if (!payload) {
-      return sendResponse(res, {
-        statusCode: StatusCodes.UNAUTHORIZED,
-        success: false,
-        message: 'Invalid Google token payload',
-      });
-    }
+//     const payload = ticket.getPayload();
+//     if (!payload) {
+//       return sendResponse(res, {
+//         statusCode: StatusCodes.UNAUTHORIZED,
+//         success: false,
+//         message: 'Invalid Google token payload',
+//       });
+//     }
 
-    const {
-      sub: googleId,
-      email,
-      name: fullName,
-      picture: image,
-      email_verified: emailVerified,
-    } = payload;
+//     const {
+//       sub: googleId,
+//       email,
+//       name: fullName,
+//       picture: image,
+//       email_verified: emailVerified,
+//     } = payload;
 
-    if (!emailVerified) {
-      return sendResponse(res, {
-        statusCode: StatusCodes.BAD_REQUEST,
-        success: false,
-        message: 'Google email not verified',
-      });
-    }
+//     if (!emailVerified) {
+//       return sendResponse(res, {
+//         statusCode: StatusCodes.BAD_REQUEST,
+//         success: false,
+//         message: 'Google email not verified',
+//       });
+//     }
 
-    let user = await User.findOne({ googleId });
-    const isNewUser = !user;
+//     let user = await User.findOne({ googleId });
+//     const isNewUser = !user;
 
-    if (!user) {
-      user = await User.create({
-        googleId,
-        fullName: fullName || '',
-        email: email || '',
-        image: image || '',
-        isVerified: true,
-        isRestricted: false,
-        role: USER_ROLES.USER,
-      });
-    } else {
-      user.name = fullName || '';
-      user.email = user.email || email || '';
-      user.verified = true;
-      await user.save();
-    }
+//     if (!user) {
+//       user = await User.create({
+//         googleId,
+//         fullName: fullName || '',
+//         email: email || '',
+//         image: image || '',
+//         isVerified: true,
+//         isRestricted: false,
+//         role: USER_ROLES.USER,
+//       });
+//     } else {
+//       user.name = fullName || '';
+//       user.email = user.email || email || '';
+//       user.verified = true;
+//       await user.save();
+//     }
 
-    const { accessToken, refreshToken } = generateTokens(user._id.toString());
+//     const { accessToken, refreshToken } = generateTokens(user._id.toString());
 
-    await User.findByIdAndUpdate(user._id, {
-      $push: { refreshTokens: refreshToken },
-    });
+//     await User.findByIdAndUpdate(user._id, {
+//       $push: { refreshTokens: refreshToken },
+//     });
 
-    return sendResponse(res, {
-      statusCode: isNewUser ? StatusCodes.CREATED : StatusCodes.OK,
-      success: true,
-      message: isNewUser
-        ? 'User registered successfully with Google.'
-        : 'User logged in successfully with Google.',
-      data: {
-        tokens: { accessToken, refreshToken },
-        user: {
-          id: user._id,
-          googleId: user.googleId,
-          fullName: user.name,
-          email: user.email,
-          role: user.role,
-          isVerified: user.verified,
-        },
-      },
-    });
-  } catch (error: any) {
-    console.error('Google login error:', error.message);
-    return sendResponse(res, {
-      statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-      success: false,
-      message: 'Google authentication failed',
-    });
-  }
-};
+//     return sendResponse(res, {
+//       statusCode: isNewUser ? StatusCodes.CREATED : StatusCodes.OK,
+//       success: true,
+//       message: isNewUser
+//         ? 'User registered successfully with Google.'
+//         : 'User logged in successfully with Google.',
+//       data: {
+//         tokens: { accessToken, refreshToken },
+//         user: {
+//           id: user._id,
+//           googleId: user.googleId,
+//           fullName: user.name,
+//           email: user.email,
+//           role: user.role,
+//           isVerified: user.verified,
+//         },
+//       },
+//     });
+//   } catch (error: any) {
+//     console.error('Google login error:', error.message);
+//     return sendResponse(res, {
+//       statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+//       success: false,
+//       message: 'Google authentication failed',
+//     });
+//   }
+// };
 
 export const googleAuthLoginFirebase = async (
   req: Request,
@@ -344,6 +344,21 @@ export const googleAuthLoginFirebase = async (
   }
 };
 
+// Controller function
+const deleteUserByEmail = catchAsync(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  const result = await UserService.deleteUserByEmailAndPassword(email, password);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Account deleted successfully',
+    data: result, // this will be undefined but can be changed if needed
+  });
+});
+
+
 export const UserController = { 
   createUser,
    createAdmin, 
@@ -355,6 +370,7 @@ export const UserController = {
    updateUserLocationController,
    deleteUser,
   //  googleLoginOrRegister,
-   googleLoginOrRegister,
-   googleAuthLoginFirebase
+  //  googleLoginOrRegister,
+   googleAuthLoginFirebase,
+   deleteUserByEmail
   };

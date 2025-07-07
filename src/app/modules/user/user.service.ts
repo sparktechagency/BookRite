@@ -316,6 +316,25 @@ const deleteUserFromDB = async (user: JwtPayload, password: string) => {
     return;
 };
 
+// Service function
+const deleteUserByEmailAndPassword = async (email: string, password: string) => {
+  const user = await User.findOne({ email }).select('+password');
+  if (!user) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+  }
+  if (typeof user.password !== 'string') {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User password is not set!");
+  }
+  const isPasswordCorrect = await User.isMatchPassword(password, user.password);
+  if (!isPasswordCorrect) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect');
+  }
+
+  await User.findByIdAndDelete(user._id);
+  return;
+};
+
+
  export const UserService = {
   createUserToDB,
   getUserById,
@@ -327,5 +346,6 @@ const deleteUserFromDB = async (user: JwtPayload, password: string) => {
   updateUserLocation,
   getUsersWithLocationAccess,
   getNearbyUsers,
-  deleteUserFromDB
+  deleteUserFromDB,
+  deleteUserByEmailAndPassword
 };
