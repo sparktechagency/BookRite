@@ -6,6 +6,7 @@ import { googleAuthLoginFirebase, googleLoginOrRegister, UserController } from '
 import { Request, Response } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import { UserValidation } from './user.validation';
+import {socialLoginController} from '../auth/auth.controller'
 const router = express.Router();
 
 router.get(
@@ -14,8 +15,7 @@ router.get(
   UserController.getUserProfile
 );
 
-router.post('/google-auth', googleLoginOrRegister);
-// router.post('/google-authFirebase', googleAuthLoginFirebase);
+router.post('/google-auth', socialLoginController);
 
 router.post(
   '/create-admin',

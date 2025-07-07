@@ -79,7 +79,7 @@ export type IUser = {
   contact: string;
   dateOfBirth: string;
   status?: 'active' | 'delete' | 'block';
-  googleId?: string;
+  // googleId?: string;
   email: string;
   password?: string;
   location?: {
@@ -105,16 +105,11 @@ export type IUser = {
   totalService: number;
   stripeCustomerId?: string;
   createdAt: Date;
-  socialAccounts?: {
-    google?: {
-      id: string;
-      email: string;
-      name: string;
-      avatar: string;
-    };
-  };
+
   avatar?: string;
   lastLoginAt?: Date;
+
+  
 };
 export type UserModal = {
   isExistUserById(id: string): Promise<IUser | null>;

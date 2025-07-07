@@ -17,6 +17,7 @@ import generateOTP from '../../../util/generateOTP';
 import { ResetToken } from '../resetToken/resetToken.model';
 import { User } from '../user/user.model';
 import { USER_ROLES } from '../../../enums/user';
+import { IUser } from '../user/user.interface';
 
 //login
 // const loginUserFromDB = async (payload: ILoginData) => {
@@ -66,6 +67,180 @@ import { USER_ROLES } from '../../../enums/user';
 //   );
 
 //   return { createToken };
+// };
+
+
+export const socialLoginFromDB = async (payload: IUser) => {
+  const { appId, name, email } = payload;
+
+  // Validate input payload
+  if (!appId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'appId is required for social login');
+  }
+
+  // Log input payload for debugging
+  console.log('Input payload:', { appId, name, email });
+
+  const role = USER_ROLES.USER;
+
+  // Search for existing user
+  let isExistUser = await User.findOne({ appId, role }).select('name email isSubscribed role');
+
+  if (isExistUser) {
+    // Log the retrieved user for debugging
+    console.log('Existing user found:', isExistUser);
+
+    // Update name and email if provided in the payload
+    const updateData: Partial<IUser> = {};
+    if (name && isExistUser.name !== name) updateData.name = name;
+    if (email && isExistUser.email !== email) updateData.email = email;
+
+    if (Object.keys(updateData).length > 0) {
+      isExistUser = await User.findOneAndUpdate(
+        { appId, role },
+        { $set: updateData },
+        { new: true, select: 'name email isSubscribed role' }
+      );
+      console.log('Updated user:', isExistUser);
+    }
+
+    if (!isExistUser) {
+      throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to retrieve or update user');
+    }
+
+    const accessToken = jwtHelper.createToken(
+      { id: isExistUser._id, role: isExistUser.role },
+      config.jwt.jwt_secret as Secret,
+      config.jwt.jwt_expire_in as string
+    );
+
+    const refreshToken = jwtHelper.createToken(
+      { id: isExistUser._id, role: isExistUser.role },
+      config.jwt.jwtRefreshSecret as Secret,
+      config.jwt.jwtRefreshExpiresIn as string
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      isRegister: false,
+      isSubscribed: isExistUser.isSubscribed || false,
+      userId: isExistUser._id.toString(),
+      name: isExistUser.name || '',
+      email: isExistUser.email || '',
+      role: isExistUser.role,
+    };
+  } else {
+    // Validate name or email for new user
+    if (!name && !email) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'At least one of name or email is required for new user');
+    }
+
+    // Create a new user
+    const newUserData: Partial<IUser> = {
+      appId,
+      role,
+      verified: true,
+      name: name || '',
+      email: email || '',
+    };
+
+    console.log('Creating new user with data:', newUserData);
+
+    const user = await User.create(newUserData);
+
+    console.log('New user created:', user);
+
+    const accessToken = jwtHelper.createToken(
+      { id: user._id, role: user.role },
+      config.jwt.jwt_secret as Secret,
+      config.jwt.jwt_expire_in as string
+    );
+
+    const refreshToken = jwtHelper.createToken(
+      { id: user._id, role: user.role },
+      config.jwt.jwtRefreshSecret as Secret,
+      config.jwt.jwtRefreshExpiresIn as string
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      isRegister: true,
+      isSubscribed: user.isSubscribed || false,
+      userId: user._id.toString(),
+      name: user.name || '',
+      email: user.email || '',
+      role: user.role,
+    };
+  }
+};
+
+// export const socialLoginFromDB = async (payload: IUser) => {
+//   const { appId } = payload;
+
+//   if (!appId) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'appId is required for social login');
+//   }
+
+//   const role = USER_ROLES.USER;
+
+//   // Only search for users with role USER
+//   const isExistUser = await User.findOne({ appId, role: USER_ROLES.USER });
+
+//   if (isExistUser) {
+//     const accessToken = jwtHelper.createToken(
+//       { id: isExistUser._id, role: isExistUser.role },
+//       config.jwt.jwt_secret as Secret,
+//       config.jwt.jwt_expire_in as string
+//     );
+
+//     const refreshToken = jwtHelper.createToken(
+//       { id: isExistUser._id, role: isExistUser.role },
+//       config.jwt.jwtRefreshSecret as Secret,
+//       config.jwt.jwtRefreshExpiresIn as string
+//     );
+
+//     return {
+//       accessToken,
+//       refreshToken,
+//       isRegister: false,
+//       isSubscribed: isExistUser.isSubscribed,
+//       userId: isExistUser._id.toString(),
+//       name: isExistUser.name,
+//       email: isExistUser.email,
+//       role: isExistUser.role,
+//     };
+//   } else {
+//     // Always create new users as role USER
+//     const user = await User.create({ appId, role, verified: true });
+//     if (!user) {
+//       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
+//     }
+
+//     const accessToken = jwtHelper.createToken(
+//       { id: user._id, role: user.role },
+//       config.jwt.jwt_secret as Secret,
+//       config.jwt.jwt_expire_in as string
+//     );
+
+//     const refreshToken = jwtHelper.createToken(
+//       { id: user._id, role: user.role },
+//       config.jwt.jwtRefreshSecret as Secret,
+//       config.jwt.jwtRefreshExpiresIn as string
+//     );
+
+//     return {
+//       accessToken,
+//       refreshToken,
+//       isRegister: true,
+//       isSubscribed: false,
+//       userId: user._id.toString(),
+//       name: user.name,
+//       email: user.email,
+//       role: user.role,
+//     };
+//   }
 // };
 
 const loginUserFromDB = async (payload: ILoginData) => {
@@ -308,4 +483,5 @@ export const AuthService = {
   forgetPasswordToDB,
   resetPasswordToDB,
   changePasswordToDB,
+  socialLoginFromDB,
 };

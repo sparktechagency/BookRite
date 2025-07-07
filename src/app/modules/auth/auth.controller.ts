@@ -1,10 +1,13 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
-import { AuthService } from './auth.service';
+import { AuthService, socialLoginFromDB } from './auth.service';
 import { User } from 'mercadopago';
 import ApiError from '../../../errors/ApiError';
+import httpStatus from 'http-status';
+import { IUser } from '../user/user.interface';
+
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   const { ...verifyData } = req.body;
@@ -33,6 +36,23 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     },
   });
 });
+
+export const socialLoginController = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const payload = req.body as IUser;
+
+    const result = await socialLoginFromDB(payload);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: result.isRegister
+        ? 'User created & login successful'
+        : 'Login successful',
+      data: result,
+    });
+  }
+);
 
 const forgetPassword = catchAsync(async (req: Request, res: Response) => {
   const email = req.body.email;
@@ -102,4 +122,7 @@ export const AuthController = {
   forgetPassword,
   resetPassword,
   changePassword,
+  socialLoginController
 };
+
+

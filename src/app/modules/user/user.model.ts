@@ -13,15 +13,12 @@ const userSchema = new Schema<IUser>(
       ref: "Servicewc",
       select: 0
     },
+    
     name: {
       type: String,
       required: false,
     },
-    googleId: {
-      type: String,
-      required: false,
-      unique: true, 
-    },
+  
     status: {
       type: String,
       enum: ['active', 'delete', 'block'],
@@ -44,7 +41,7 @@ const userSchema = new Schema<IUser>(
 
     email: {
       type: String,
-      required: true,
+      required: false,
       unique: true, 
       lowercase: true,
     },
@@ -134,14 +131,14 @@ isSubscribed: {
       type: Date,
       default: Date.now,
     },
-    socialAccounts: {
-      google: {
-        id: { type: String, required: false },
-        email: { type: String, required: false },
-        name: { type: String, required: false },
-        avatar: { type: String, required: false },
-      },
-    },
+    // socialAccounts: {
+    //   google: {
+    //     id: { type: String, required: false },
+    //     email: { type: String, required: false },
+    //     name: { type: String, required: false },
+    //     avatar: { type: String, required: false },
+    //   },
+    // },
     avatar: { type: String, default: '' },
     lastLoginAt: { type: Date, default: null },
   
