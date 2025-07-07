@@ -15,7 +15,7 @@ const app = express();
 // });
 
 // app.post('/api/v1/webhook', express.raw({ type: 'application/json' }), PaymentController.handleStripeWebhooks); 
-app.post('https://api.flxbookonline.com/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), unifiedStripeWebhookHandler);
+app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), unifiedStripeWebhookHandler);
 
 app.use(express.json());
 app.use(Morgan.successHandler);
