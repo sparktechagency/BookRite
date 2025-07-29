@@ -96,7 +96,7 @@ import sendResponse from '../../../shared/sendResponse';
 import ApiError from '../../../errors/ApiError';
 
 const stripe = new Stripe(config.stripe.stripe_api_secret as string, {
-  apiVersion: "2025-04-30.basil",
+  apiVersion: '2022-11-15',
 });
 
 // Create a payment session for a booking

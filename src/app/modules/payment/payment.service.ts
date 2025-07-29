@@ -1,55 +1,3 @@
-// import Stripe from 'stripe';
-// import { Booking } from '../booking/booking.model'; // Assuming the Booking model is in this path
-// import ApiError from '../../../errors/ApiError'; // Custom error handling
-// import { StatusCodes } from 'http-status-codes';
-// import config from '../../../config';
-// import { Servicewc } from '../service/serviceswc.model';
-
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || " ", {
-//     apiVersion: "2025-04-30.basil", 
-    
-//   });
-// export const createPaymentSession = async (bookingId: string) => {
-//   const booking = await Booking.findById(bookingId).populate('serviceId');
-//   if (!booking) {
-//     throw new Error('Booking not found');
-//   }
-
-//   const service = booking.serviceId as any;
-//   const priceNumber = Number(service.price);
-//   if (isNaN(priceNumber) || priceNumber <= 0) {
-//     throw new Error('Service price is invalid or missing');
-//   }
-
-//   const session = await stripe.checkout.sessions.create({
-//     payment_method_types: ['card'],
-//     mode: 'payment',
-//     line_items: [
-//       {
-//         price_data: {
-//           currency: 'usd',
-//           product_data: {
-//             name: service.serviceName,
-//             description: service.serviceDescription,
-//           },
-//           unit_amount: Math.round(priceNumber * 100),
-//         },
-//         quantity: 1,
-//       },
-//     ],
-    // success_url: `${process.env.CLIENT_URL}/booking-success?bookingId=${booking._id}`,
-    // cancel_url: `${process.env.CLIENT_URL}/booking-cancel?bookingId=${booking._id}`,
-//     metadata: {
-//       bookingId: booking._id.toString(),
-//     },
-//   });
-
-//   booking.paymentSessionId = session.id;
-//   await booking.save();
-
-//   return session.url;
-// };
-
 
 import { StatusCodes } from 'http-status-codes';
 import Stripe from 'stripe';
@@ -64,8 +12,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { Subscription } from '../subscription/subscription.model';
 
 const stripe = new Stripe(config.stripe.stripe_api_secret as string, {
- apiVersion: "2025-04-30.basil",
+  apiVersion: '2022-11-15',
 });
+
 
 const createPaymentSession = async (bookingId: string, user: any) => {
   const booking = await Booking.findById(bookingId)

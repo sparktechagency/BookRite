@@ -135,7 +135,7 @@ export const createSubscriptionProduct = async (payload: Partial<IPackage>): Pro
         after_completion: {
             type: 'redirect',
             redirect: {
-                url: `${process.env.CLIENT_URL}/payment-success`,
+                url: `${process.env.CLIENT_URL_PROD}/payment-success`,
             },
         },
         metadata: {

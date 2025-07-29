@@ -408,6 +408,7 @@ const resetPasswordToDB = async (
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
+      
       "New password and Confirm password doesn't match!"
     );
   }
