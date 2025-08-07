@@ -435,46 +435,46 @@ const changePasswordToDB = async (
   payload: IChangePassword
 ) => {
   const { currentPassword, newPassword, confirmPassword } = payload;
+
+  // Find the user with password (ensure password is selected)
   const isExistUser = await User.findById(user.id).select('+password');
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  //current password match
-  if (
-    currentPassword &&
-    isExistUser.password && !User.isMatchPassword(currentPassword, isExistUser.password)
-  ) {
+  // Check if current password is correct
+  if (!isExistUser.password) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "User password is not set!");
+  }
+  const isCurrentPasswordMatch = await bcrypt.compare(currentPassword, isExistUser.password);
+  if (!isCurrentPasswordMatch) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect');
   }
 
-  //newPassword and current password
+  // Check if new password is same as current password
   if (currentPassword === newPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      'Please give different password from current password'
+      'Please give a different password from the current password'
     );
   }
-  //new password and confirm password check
+
+  // Check if new password and confirm password match
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "Password and Confirm password doesn't matched"
+      "Password and Confirm password don't match"
     );
   }
 
-  //hash password
-  const hashPassword = await bcrypt.hash(
-    newPassword,
-    Number(config.bcrypt_salt_rounds)
-  );
+  // Hash the new password
+  const hashedPassword = await bcrypt.hash(newPassword, Number(config.bcrypt_salt_rounds));
 
-  const updateData = {
-    password: hashPassword,
-  };
-  await User.findOneAndUpdate({ _id: user.id }, updateData, { new: true });
+  // Update the user password in DB
+  await User.findOneAndUpdate({ _id: user.id }, { password: hashedPassword }, { new: true });
+
+  return 'Password updated successfully';
 };
-
 export const AuthService = {
   verifyEmailToDB,
   loginUserFromDB,
