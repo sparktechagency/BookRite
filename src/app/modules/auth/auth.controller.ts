@@ -7,6 +7,7 @@ import { User } from 'mercadopago';
 import ApiError from '../../../errors/ApiError';
 import httpStatus from 'http-status';
 import { IUser } from '../user/user.interface';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
@@ -42,13 +43,13 @@ export const socialLoginController = catchAsync(
     const payload = req.body as IUser;
 
     const result = await socialLoginFromDB(payload);
-
+    await SubscriptionService.createFreeMembership(result.userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
       message: result.isRegister
         ? 'User created & login successful'
-        : 'Login successful',
+        : 'User logged in and free membership created successfully',
       data: result,
     });
   }
@@ -66,18 +67,6 @@ const forgetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// const resetPassword = catchAsync(async (req: Request, res: Response) => {
-//   const token = req.headers.authorization;
-//   const { ...resetData } = req.body;
-//   const result = await AuthService.resetPasswordToDB(token!, resetData);
-
-//   sendResponse(res, {
-//     success: true,
-//     statusCode: StatusCodes.OK,
-//     message: 'Password reset successfully',
-//     data: result,
-//   });
-// });
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const authHeader = req.headers.authorization;
 

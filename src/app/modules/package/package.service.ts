@@ -6,36 +6,7 @@ import mongoose from "mongoose";
 import { createSubscriptionProduct } from "../../../helpers/createSubscriptionProductHelper";
 import stripe from "../../../config/stripe";
 
-// const createPackageToDB = async(payload: IPackage): Promise<IPackage | null>=>{
 
-//     const productPayload = {
-//         title: payload.title,
-//         description: payload.description,
-//         duration: payload.duration,
-//         price: Number(payload.price),
-//     }
-
-//     const product = await createSubscriptionProduct(productPayload);
-    
-
-//     if(!product){
-//         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription product")
-//     }
-
-//     if(product){
-//         payload.paymentLink = product.paymentLink
-//         payload.productId = product.productId
-//     }
-    
-
-//     const result = await Package.create(payload);
-//     if(!result){
-//         await stripe.products.del(product.productId);
-//         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to created Package")
-//     }
-
-//     return result;
-// }
 const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> => {
   const productPayload = {
     title: payload.title,
@@ -83,23 +54,6 @@ const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> =>
   return result;
 };
 
-
-
-// const updatePackageToDB = async (id: string, payload: Partial<IPackage>): Promise<IPackage | null> => {
-
-//     if(!mongoose.Types.ObjectId.isValid(id)){
-//         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
-//     }
-
-//     const result = await Package.findByIdAndUpdate(id, payload, { new: true })
-
-
-//     if(!result){
-//         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to Update Package");
-//     }
-
-//     return result;
-// };
 const updatePackageToDB = async (
   id: string,
   payload: Partial<IPackage>

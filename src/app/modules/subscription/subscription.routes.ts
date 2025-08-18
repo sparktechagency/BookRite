@@ -19,4 +19,14 @@ router.get("/:id",
     SubscriptionController.companySubscriptionDetails
 )
 
+router.get("/user/:id", 
+    auth(USER_ROLES.ADMIN), 
+    SubscriptionController.getUserSubscriptionController
+)
+
+router.post("/cancel", 
+    auth(USER_ROLES.USER), 
+    SubscriptionController.cancelSubscription
+);
+
 export const SubscriptionRoutes = router;

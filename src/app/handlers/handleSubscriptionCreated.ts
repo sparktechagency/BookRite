@@ -7,7 +7,8 @@ import { Package } from '../modules/package/package.model';
 import { Subscription } from '../modules/subscription/subscription.model';
 import { ObjectId, Schema } from 'mongoose';
 import { sendNotifications } from '../../helpers/notificationsHelper';
-import { IPackage, IUser } from '../modules/user/user.interface';
+import { IUser } from '../modules/user/user.interface';
+import { IPackage } from '../modules/package/package.interface';
 
 
 // Helper function to convert timestamps safely
@@ -78,11 +79,11 @@ const getPackageByProductId = async (productId: string): Promise<IPackage> => {
 // Helper function to create or update subscription
 const createNewSubscription = async (
   user: Schema.Types.ObjectId,
-  customerId: string,
+  customerId?: string,
   packageId: Schema.Types.ObjectId,
   amountPaid: number,
   trxId: string,
-  subscriptionId: string,
+  membershipId: string,
   currentPeriodStart: string,
   currentPeriodEnd: string,
   remaining: number,
@@ -97,7 +98,7 @@ const createNewSubscription = async (
     user,
     package: packageId,
     trxId,
-    subscriptionId,
+    membershipId,
     status,
     currentPeriodStart,
     currentPeriodEnd,

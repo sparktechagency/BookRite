@@ -2,11 +2,11 @@ import { model, Schema } from "mongoose";
 import { ISubscription, SubscriptionModel } from "./subscription.interface";
 
 
-const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
+const MemberShipSchema = new Schema<ISubscription, SubscriptionModel>(
     {
         customerId: {
             type: String,
-            required: true
+            required: false
         },
         price: {
             type: Number,
@@ -27,7 +27,7 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
             type: String,
             required: true
         },
-        subscriptionId: {
+        membershipId: {
             type: String,
             required: true
         },
@@ -56,4 +56,4 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
     }
 )
 
-export const Subscription = model<ISubscription, SubscriptionModel>("Subscription", subscriptionSchema)
+export const Subscription = model<ISubscription, SubscriptionModel>("Subscription", MemberShipSchema)

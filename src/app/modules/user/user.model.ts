@@ -122,6 +122,8 @@ isSubscribed: {
     },
     stripeCustomerId: {
       type: String,
+      required: false,
+      
     },
     totalService :{
       type:Number,

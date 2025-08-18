@@ -11,6 +11,7 @@ export type IPackage = {
     credit: Number;
     paymentLink?: string;
     status: 'Active' | 'Delete'
+    isFree?: boolean;
 }
 
 export type PackageModel = Model<IPackage, Record<string, unknown>>;

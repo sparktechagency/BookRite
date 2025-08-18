@@ -13,6 +13,7 @@ import { OAuth2Client } from 'google-auth-library';
 import ApiError from '../../../errors/ApiError';
 import { jwtHelper } from '../../../helpers/jwtHelper';
 import config from '../../../config';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 
@@ -23,6 +24,7 @@ const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { ...userData } = req.body;
     const result = await UserService.createUserToDB(userData);
+      await SubscriptionService.createFreeMembership(result._id.toString());
 
     sendResponse(res, {
       success: true,

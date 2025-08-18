@@ -4,6 +4,10 @@ import { ISubscription } from "./subscription.interface";
 import { Subscription } from "./subscription.model";
 import stripe from "../../../config/stripe";
 import { User } from "../user/user.model";
+import ApiError from "../../../errors/ApiError";
+import { StatusCodes } from "http-status-codes";
+import { USER_ROLES } from "../../../enums/user";
+import { Types } from "mongoose";
 
 
 const subscriptionDetailsFromDB = async (user: JwtPayload): Promise<{ subscription: ISubscription | {} }> => {
@@ -13,7 +17,7 @@ const subscriptionDetailsFromDB = async (user: JwtPayload): Promise<{ subscripti
         return { subscription: {} }; // Return empty object if no subscription found
     }
 
-    const subscriptionFromStripe = await stripe.subscriptions.retrieve(subscription.subscriptionId);
+    const subscriptionFromStripe = await stripe.subscriptions.retrieve(subscription.membershipId);
 
     // Check subscription status and update database accordingly
     if (subscriptionFromStripe?.status !== "active") {
@@ -26,6 +30,41 @@ const subscriptionDetailsFromDB = async (user: JwtPayload): Promise<{ subscripti
     return { subscription };
 };
 
+const createFreeMembership = async (userId: string) => {
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error("User not found.");
+    }
+    if (user.role !== USER_ROLES.ADMIN) {
+        throw new Error("Only ADMIN users can create a free membership.");
+    }
+    const freePackage = await Package.findOne({ isFree: true });
+    if (!freePackage) {
+        throw new Error("No free package available.");
+    }
+
+    const existingMembership = await Subscription.findOne({ user: userId });
+    if (existingMembership) {
+        throw new Error("User already has a membership.");
+    }
+    const membership = new Subscription({
+        user: userId,
+        package: freePackage._id,
+        price: 0,
+        trxId: "FREE_TRX_" + new Date().getTime(),
+        membershipId: "FREE_" + new Date().getTime(),
+        currentPeriodStart: new Date().toISOString(),
+        currentPeriodEnd: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(), // 1 month
+        remaining: freePackage.credit,
+        status: "active",
+    });
+
+    await membership.save();
+
+    await User.findByIdAndUpdate(userId, { isSubscribed: true });
+
+    return membership;
+};
 
 const companySubscriptionDetailsFromDB = async (id: string): Promise<{ subscription: ISubscription | {} }> => {
 
@@ -34,7 +73,7 @@ const companySubscriptionDetailsFromDB = async (id: string): Promise<{ subscript
         return { subscription: {} }; // Return empty object if no subscription found
     }
 
-    const subscriptionFromStripe = await stripe.subscriptions.retrieve(subscription.subscriptionId);
+    const subscriptionFromStripe = await stripe.subscriptions.retrieve(subscription.membershipId);
 
     // Check subscription status and update database accordingly
     if (subscriptionFromStripe?.status !== "active") {
@@ -46,8 +85,6 @@ const companySubscriptionDetailsFromDB = async (id: string): Promise<{ subscript
 
     return { subscription };
 };
-
-
 
 const subscriptionsFromDB = async (query: Record<string, unknown>): Promise<ISubscription[]> => {
     const anyConditions: any[] = [];
@@ -109,8 +146,45 @@ const subscriptionsFromDB = async (query: Record<string, unknown>): Promise<ISub
     return data;
 }
 
+const cancelSubscription = async (user: JwtPayload): Promise<{ message: string }> => {
+    const subscription = await Subscription.findOne({ user: user.id, status: "active" }).lean();
+    if (!subscription) {
+        throw new ApiError(StatusCodes.NOT_FOUND, "No active subscription found.");
+    }
+
+    try {
+        await stripe.subscriptions.cancel(subscription.membershipId);
+        
+        await Subscription.findOneAndUpdate({ user: user.id, status: "active" }, { status: "cancel" });
+
+        await User.findByIdAndUpdate(user.id, { isSubscribed: false });
+
+        return { message: "Subscription successfully cancelled." };
+    } catch (error) {
+        throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Failed to cancel subscription on Stripe.");
+    }
+};
+
+//specific user subscription service get
+const getUserSubscription = async (userId: string): Promise<ISubscription | null> => {
+    if (!Types.ObjectId.isValid(userId)) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid user ID format.");
+    }
+
+    const userObjectId = new Types.ObjectId(userId);
+    const subscription = await Subscription.findOne({ user: userObjectId })
+        .populate("package", "title credit")
+        .lean();
+
+    return subscription;
+};
+
+
 export const SubscriptionService = {
     subscriptionDetailsFromDB,
+    createFreeMembership,
     subscriptionsFromDB,
-    companySubscriptionDetailsFromDB
+    companySubscriptionDetailsFromDB,
+    cancelSubscription,
+    getUserSubscription
 }
