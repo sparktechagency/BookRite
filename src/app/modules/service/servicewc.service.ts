@@ -1,4 +1,5 @@
-import { StatusCodes } from 'http-status-codes';
+
+import mongoose from 'mongoose';import { StatusCodes } from 'http-status-codes';
 import ApiError from '../../../errors/ApiError';
 import { IWcService } from './servicewc.interface';
 import { Servicewc } from './serviceswc.model';
@@ -9,25 +10,6 @@ import { User } from '../user/user.model';
 import { USER_ROLES } from '../../../enums/user';
 import { Bookmark } from '../bookmark/bookmark.model';
 import { Request, Response, NextFunction } from 'express';
-// const createServiceToDB = async (payload: IWcService) => {
-//   const { serviceName, serviceDescription, category ,image } = payload;
-
-//   const isExist = await Servicewc.findOne({ serviceName, serviceDescription, category });
-
-//   if (isExist) {
-//     unlinkFile(image);
-//     throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This service name already exists");
-//   }
-
-//   const result = await Servicewc.create(payload);
-
-//   if (!result) {
-//     unlinkFile(image);
-//     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create service");
-//   }
-
-//   return result;
-// };
 
 const createServiceToDB = async (payload: IWcService, userId: string): Promise<IWcService> => {
 
@@ -165,80 +147,6 @@ const processedServices = services.map(service => {
   return processedServices;
 };
 
-// const getServicesFromDB = async (req: any) => {
-//   const { filter, search } = req.query;
-
-//   let query = Servicewc.find()
-//     .populate({
-//       path: 'category',
-//       select: 'CategoryName price image -_id User',
-//       populate: {
-//         path: 'User',
-//         select: 'name',
-//       },
-//     })
-//     .populate({
-//       path: 'User',
-//       select: 'name _id',
-//     })
-//     .sort({ createdAt: -1 });
-
-//   // ... (keep your existing search and filter logic)
-
-//   const services = await query.exec();
-
-//   // Get all service IDs for bookmark counting
-//   const serviceIds = services.map(service => service._id);
-
-//   // Count bookmarks for all services in one query
-//   const bookmarkCounts = await Bookmark.aggregate([
-//     {
-//       $match: {
-//         service: { $in: serviceIds }
-//       }
-//     },
-//     {
-//       $group: {
-//         _id: "$service",
-//         count: { $sum: 1 }
-//       }
-//     }
-//   ]);
-
-//   // Convert to a map for easy lookup
-//   const bookmarkCountMap = new Map(
-//     bookmarkCounts.map(item => [item._id.toString(), item.count])
-//   );
-
-//   // Process each service
-//   const processedServices = services.map(service => {
-//     const obj: any = service.toObject();
-
-//     // Rename User to serviceProvider
-//     if (obj.User) {
-//       obj.serviceProvider = obj.User;
-//       delete obj.User;
-//     }
-
-//     // Get bookmark count from our map (default to 0 if not found)
-//     obj.bookmarkCount = bookmarkCountMap.get(service._id.toString()) || 0;
-
-//     // Calculate average rating from reviews
-//     if (obj.reviews && obj.reviews.length > 0) {
-//       const ratings = obj.reviews.map((r: any) => r.rating || 0);
-//       const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
-//       obj.rating = totalRating / ratings.length;
-//     } else {
-//       obj.rating = 0;
-//     }
-
-//     return obj;
-//   });
-
-//   return processedServices;
-// };
-
-import mongoose from 'mongoose';
 
 const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
   const { filter: rawFilter, search: rawSearch } = req.query;
