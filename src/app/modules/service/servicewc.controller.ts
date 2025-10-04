@@ -80,7 +80,7 @@ const getServicesByAdminId = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: `Services created by this admin ${userId}, ${name} retrieved successfully`,
+    message: `Services created by this admin ${userId} retrieved successfully`,
     data: result,
   });
 });
