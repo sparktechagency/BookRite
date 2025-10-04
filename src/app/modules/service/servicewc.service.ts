@@ -238,124 +238,106 @@ const processedServices = services.map(service => {
 //   return processedServices;
 // };
 
-const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
-  const { filter, search } = req.query;
+import mongoose from 'mongoose';
 
-  // First, verify the user is an ADMIN (optional but recommended)
-  const adminUser = await User.findById(userId).select('role');
-  if (!adminUser || (adminUser.role !== USER_ROLES.ADMIN && adminUser.role !== USER_ROLES.SUPER_ADMIN)) {
+const getServicesByAdminIdFromDB = async (userId: string, req: any) => {
+  const { filter: rawFilter, search: rawSearch } = req.query;
+
+  // 1) Validate userId
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid userId format');
+  }
+  const userObjId = new mongoose.Types.ObjectId(userId);
+
+  // 2) Admin check (normalize casing)
+  const adminUser = await User.findById(userId).select('role').lean();
+  if (!adminUser) throw new ApiError(StatusCodes.NOT_FOUND, 'Admin user not found');
+  const role = String(adminUser.role || '').toLowerCase();
+  if (role !== String(USER_ROLES.ADMIN).toLowerCase() && role !== String(USER_ROLES.SUPER_ADMIN).toLowerCase()) {
     throw new ApiError(StatusCodes.FORBIDDEN, 'User is not authorized as admin');
   }
 
-  let query = Servicewc.find({ User: userId }) 
+  // 3) Parse filter (might be JSON string)
+  let filter: any = {};
+  if (rawFilter) {
+    try {
+      filter = typeof rawFilter === 'string' ? JSON.parse(rawFilter) : rawFilter;
+    } catch (err) {
+      // If you prefer to throw on bad filter, replace with throw
+      console.warn('Failed to parse filter, ignoring it:', rawFilter);
+      filter = {};
+    }
+  }
+
+  // 4) Search term (escape regex special chars)
+  const search = rawSearch ? String(rawSearch).trim() : null;
+  const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+  // 5) Build query. Query any of the possible user fields in your schema.
+  //    Adjust the list if you add/remove fields later.
+  const userFieldOr = [
+    { User: userObjId },
+    { userId: userObjId },
+    { serviceProvider: userObjId },
+  ];
+
+  const mainMatch: any = { $or: userFieldOr };
+
+  if (search) {
+    const term = escapeRegex(search);
+    // match serviceName (case-insensitive). Add more fields into $or if needed.
+    mainMatch.$and = [
+      { $or: [{ serviceName: { $regex: term, $options: 'i' } }] },
+    ];
+  }
+
+  // 6) Price and rating filters
+  if (filter) {
+    const priceClause: any = {};
+    if (filter.minPrice != null && !Number.isNaN(Number(filter.minPrice))) {
+      priceClause.$gte = Number(filter.minPrice);
+    }
+    if (filter.maxPrice != null && !Number.isNaN(Number(filter.maxPrice))) {
+      priceClause.$lte = Number(filter.maxPrice);
+    }
+    if (Object.keys(priceClause).length) {
+      mainMatch.price = priceClause;
+    }
+
+    if (filter.rating != null && !Number.isNaN(Number(filter.rating))) {
+      mainMatch.rating = { $gte: Number(filter.rating) };
+    }
+  }
+
+  // 7) Execute query with populates (confirm populate paths exist)
+  const services = await Servicewc.find(mainMatch)
     .populate({
       path: 'category',
       select: 'CategoryName price image -_id User',
-      populate: {
-        path: 'User',
-        select: 'name',
-      },
+      populate: { path: 'User', select: 'name' },
     })
-    .populate({
-      path: 'User',
-      select: 'name _id',
-    })
-    .sort({ createdAt: -1 });
+    .populate({ path: 'User', select: 'name _id' })
+    .populate({ path: 'serviceProvider', select: 'name _id' })
+    .populate({ path: 'userId', select: 'name _id' })
+    .sort({ createdAt: -1 })
+    .lean()
+    .exec();
 
-  if (search) {
-    const searchTerm = search.toLowerCase();
-    query = query.find({
-      serviceName: { $regex: searchTerm, $options: 'i' },
-    });
-  }
-
-  if (filter) {
-    const { minPrice, maxPrice, rating } = filter;
-    if (minPrice || maxPrice || rating) {
-      query = query.find({
-        price: { $gte: minPrice || 0, $lte: maxPrice || Infinity },
-        rating: { $gte: rating || 0 },
-      });
+  // 8) Normalize producer info => always return serviceProvider field
+  const processed = services.map((svc: any) => {
+    // prefer populated serviceProvider, then userId, then User
+    if (!svc.serviceProvider) {
+      if (svc.userId) svc.serviceProvider = svc.userId;
+      else if (svc.User) svc.serviceProvider = svc.User;
     }
-  }
-
-  const services = await query.exec();
-
-  // Rename User field to serviceProvider for better clarity
-  const processedServices = services.map(service => {
-    const obj = service.toObject();
-    if (obj.User) {
-      (obj as any).serviceProvider = obj.User;
-      delete obj.User;
-    }
-    return obj;
+    // remove legacy fields to avoid confusion
+    delete svc.User;
+    delete svc.userId;
+    return svc;
   });
 
-  return processedServices;
+  return processed;
 };
-
-//  const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     const limit = parseInt(req.query.limit as string) || 5;
-
-//     let query = Servicewc.find()
-//       .populate({
-//         path: 'category',
-//         select: 'CategoryName price image -_id User',
-//         populate: {
-//           path: 'User',
-//           select: 'name',
-//         },
-//       })
-//       .populate({
-//         path: 'User',
-//         select: 'name _id',
-//       })
-//       .sort({ createdAt: -1 })
-//       .sort({ 'reviews.rating': -1 }) // this overrides the earlier sort, so keep only one if needed
-//       .limit(limit);
-
-//     const services = await query.exec();
-
-//     const processedServices = services.map(service => {
-//       const obj: any = service.toObject();
-
-//       // Rename User to serviceProvider
-//       if (obj.User) {
-//         obj.serviceProvider = obj.User;
-//         delete obj.User;
-//       }
-
-//       obj.bookmarkCount = obj.Bookmark ? 1 : 0;
-//       delete obj.Bookmark;
-
-//       // Calculate average rating from reviews
-//       if (obj.reviews && obj.reviews.length > 0) {
-//         const ratings = obj.reviews.map((r: any) => r.rating || 0);
-//         const totalRating = ratings.reduce((acc: number, cur: number) => acc + cur, 0);
-//         obj.rating = totalRating / ratings.length;
-//       } else {
-//         obj.rating = 0;
-//       }
-
-//       res.send(obj);
-//     });
-
-//     // ✅ Send response
-//      res.status(200).json({
-//       success: true,
-//       message: 'Top rated services retrieved successfully',
-//       data: processedServices,
-//     });
-//   } catch (error) {
-//     // ✅ Proper error response
-//      res.status(500).json({
-//       success: false,
-//       message: 'Failed to fetch top-rated services',
-//       error: error instanceof Error ? error.message : error,
-//     });
-//   }
-// };
 
 const getHighestRatedServices = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -363,12 +345,11 @@ const getHighestRatedServices = async (req: Request, res: Response, next: NextFu
     const userId = req.user?.id;
 
     let query = Servicewc.find()
-      .populate('category', 'CategoryName price image') // ✅ clean category population
-      .populate('userId', 'name _id rating'); // ✅ make sure provider is included
+      .populate('category', 'CategoryName price image') 
+      .populate('userId', 'name _id rating');
 
     const services = await query.exec();
 
-    // ✅ Calculate rating per service
     const servicesWithRating = services.map(service => {
       const obj: any = service.toObject();
 
