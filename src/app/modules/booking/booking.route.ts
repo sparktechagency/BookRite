@@ -11,7 +11,7 @@ const router = express.Router();
 router.post('/', auth(USER_ROLES.USER), BookingController.createBooking);
 
 router.get('/booking-status',
-  auth(USER_ROLES.ADMIN),
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
   BookingController.getBookingStatusSummary
 );
 

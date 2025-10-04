@@ -72,9 +72,6 @@ const getHighestRated = catchAsync(async (req: Request, res: Response, next: Nex
 // 
 const getServicesByAdminId = catchAsync(async (req: Request, res: Response) => {
   const { userId } = req.params;
-
-  // Optional: you could validate if adminId belongs to an admin user here before fetching services
-
   const result = await ServiceWcServices.getServicesByAdminIdFromDB(userId, req);
 
   sendResponse(res, {
