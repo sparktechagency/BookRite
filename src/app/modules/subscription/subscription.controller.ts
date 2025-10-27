@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { VerifyBodySchema } from "./validation";
 import { getPurchaseById, handleGooglePlayVerify, listPurchases, listPurchasesByUser } from "./subscription.service";
 
-async function verifyAndroidPurchaseController(req: Request, res: Response): Promise<void> {
+async function verifyAndroidPurchase(req: Request, res: Response): Promise<void> {
     try {
         const parse = VerifyBodySchema.safeParse(req.body);
         if (!parse.success) {
@@ -16,7 +16,6 @@ async function verifyAndroidPurchaseController(req: Request, res: Response): Pro
             res.status(400).json({ success: false, message: "Invalid source" });
             return;
         }
-
 
         const pkg = process.env.ANDROID_PACKAGE_NAME!;
         if (verificationData.packageName !== pkg) {
@@ -38,7 +37,8 @@ async function verifyAndroidPurchaseController(req: Request, res: Response): Pro
     }
 }
 
-async function getAllPurchasesController(req: Request, res: Response): Promise<void> {
+
+async function getAllPurchases(req: Request, res: Response): Promise<void> {
     try {
         const {
             userId,
@@ -65,7 +65,7 @@ async function getAllPurchasesController(req: Request, res: Response): Promise<v
     }
 }
 
-async function getUserPurchasesController(req: Request, res: Response): Promise<void> {
+async function getUserPurchases(req: Request, res: Response): Promise<void> {
     try {
         const { userId } = req.params;
         const { page = "1", limit = "20", sort = "-createdAt" } = req.query as any;
@@ -80,7 +80,7 @@ async function getUserPurchasesController(req: Request, res: Response): Promise<
     }
 }
 
-async function getSinglePurchaseController(req: Request, res: Response): Promise<void> {
+async function getSinglePurchase(req: Request, res: Response): Promise<void> {
     try {
         const { id } = req.params;
         const doc = await getPurchaseById(id);
@@ -98,8 +98,8 @@ async function getSinglePurchaseController(req: Request, res: Response): Promise
 }
 
 export const inAppPurchaseController = {
-    verifyAndroidPurchaseController,
-    getAllPurchasesController,
-    getUserPurchasesController,
-    getSinglePurchaseController,
+    verifyAndroidPurchase,
+    getAllPurchases,
+    getUserPurchases,
+    getSinglePurchase,
 };

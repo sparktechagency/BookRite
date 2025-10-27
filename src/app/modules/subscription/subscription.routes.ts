@@ -6,21 +6,21 @@ const router = express.Router();
 
 router.get("/",
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
-    inAppPurchaseController.getAllPurchasesController
+    inAppPurchaseController.getAllPurchases
 );
 
 router.post("/verify",
-    inAppPurchaseController.verifyAndroidPurchaseController
+    inAppPurchaseController.verifyAndroidPurchase
 );
 
 router.get("user/:id",
 
-    inAppPurchaseController.getUserPurchasesController
+    inAppPurchaseController.getUserPurchases
 )
 
 router.get("/:id",
     auth(USER_ROLES.ADMIN),
-    inAppPurchaseController.getSinglePurchaseController
+    inAppPurchaseController.getSinglePurchase
 )
 
 // router.post("/cancel",
