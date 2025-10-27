@@ -16,6 +16,9 @@ export type IUser = {
   status?: 'active' | 'delete' | 'block';
   // googleId?: string;
   email: string;
+  //inApp
+  proActive?: boolean;
+  proExpiresAt?: Date;
   password?: string;
   location?: {
     type: string;
@@ -44,7 +47,7 @@ export type IUser = {
   avatar?: string;
   lastLoginAt?: Date;
 
-  
+
 };
 export type UserModal = {
   isExistUserById(id: string): Promise<IUser | null>;

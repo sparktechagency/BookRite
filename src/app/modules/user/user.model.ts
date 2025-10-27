@@ -13,12 +13,12 @@ const userSchema = new Schema<IUser>(
       ref: "Servicewc",
       select: 0
     },
-    
+
     name: {
       type: String,
       required: false,
     },
-  
+
     status: {
       type: String,
       enum: ['active', 'delete', 'block'],
@@ -42,9 +42,13 @@ const userSchema = new Schema<IUser>(
     email: {
       type: String,
       required: false,
-      unique: true, 
+      unique: true,
       lowercase: true,
+      index: true
     },
+    //inApp
+    proActive: { type: Boolean, default: false },
+    proExpiresAt: { type: Date, default: null },
     contact: {
       type: String,
       default: "",
@@ -59,14 +63,14 @@ const userSchema = new Schema<IUser>(
       select: 0,
       minlength: 8,
     },
-        location: {
+    location: {
       type: {
         type: String,
         enum: ["Point"],
         default: "Point",
       },
       coordinates: {
-        type: [Number], 
+        type: [Number],
         default: [0, 0],
       },
     },
@@ -83,10 +87,10 @@ const userSchema = new Schema<IUser>(
       ref: "Post",
       select: 0
     },
-isSubscribed: {
-  type: Boolean,
-  default: false
-},
+    isSubscribed: {
+      type: Boolean,
+      default: false
+    },
     authentication: {
       type: {
         isResetPassword: {
@@ -104,7 +108,7 @@ isSubscribed: {
       },
       select: 0,
     },
- 
+
     accountInformation: {
       status: {
         type: Boolean,
@@ -123,11 +127,11 @@ isSubscribed: {
     stripeCustomerId: {
       type: String,
       required: false,
-      
+
     },
-    totalService :{
-      type:Number,
-      require:false,
+    totalService: {
+      type: Number,
+      require: false,
     },
     createdAt: {
       type: Date,
@@ -143,11 +147,11 @@ isSubscribed: {
     // },
     avatar: { type: String, default: '' },
     lastLoginAt: { type: Date, default: null },
-  
+
   },
 
   { timestamps: true }
-  
+
 );
 
 //exist user check
@@ -168,7 +172,7 @@ userSchema.statics.isExistUserByEmail = async (email: string) => {
 
 //account check
 userSchema.statics.isAccountCreated = async (id: string) => {
-  const isUserExist:any = await User.findById(id);
+  const isUserExist: any = await User.findById(id);
   return isUserExist.accountInformation.status;
 };
 

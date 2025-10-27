@@ -13,7 +13,7 @@ import { OAuth2Client } from 'google-auth-library';
 import ApiError from '../../../errors/ApiError';
 import { jwtHelper } from '../../../helpers/jwtHelper';
 import config from '../../../config';
-import { SubscriptionService } from '../subscription/subscription.service';
+// import { SubscriptionService } from '../subscription/subscription.service';
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 
@@ -24,7 +24,7 @@ const createUser = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const { ...userData } = req.body;
     const result = await UserService.createUserToDB(userData);
-      await SubscriptionService.createFreeMembership(result._id.toString());
+    // await SubscriptionService.createFreeMembership(result._id.toString());
 
     sendResponse(res, {
       success: true,
@@ -118,13 +118,13 @@ const resendOtp = catchAsync(
   }
 );
 
-  const updateUserLocationController: any = async (
+const updateUserLocationController: any = async (
   req: Request,
   res: Response
 ) => {
   try {
 
-    const userId = req.user?.id; 
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized: User ID missing" });
@@ -136,7 +136,7 @@ const resendOtp = catchAsync(
       userId,
       longitude,
       latitude,
-      
+
     );
 
     res.json({ message: "Location updated successfully", user: updatedUser });
@@ -145,7 +145,7 @@ const resendOtp = catchAsync(
   }
 };
 
- const getUsersWithLocationController = async (
+const getUsersWithLocationController = async (
   req: Request,
   res: Response
 ) => {
@@ -158,14 +158,14 @@ const resendOtp = catchAsync(
 };
 
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
-    const result = await UserService.deleteUserFromDB(req.user, req.body.password);
+  const result = await UserService.deleteUserFromDB(req.user, req.body.password);
 
-    sendResponse(res, {
-        success: true,
-        statusCode: StatusCodes.OK,
-        message: 'Account Deleted successfully',
-        data: result
-    });
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Account Deleted successfully',
+    data: result
+  });
 });
 
 // JWT token generation
@@ -303,7 +303,7 @@ export const googleAuthLoginFirebase = async (
     const { email, name, profile } = req.body;
 
     if (!email) {
-       res.status(StatusCodes.BAD_REQUEST).json({
+      res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: 'Email is required',
       });
@@ -317,7 +317,7 @@ export const googleAuthLoginFirebase = async (
         email,
         name: name || '',
         profile: profile || '',
-        role: USER_ROLES.USER, 
+        role: USER_ROLES.USER,
         verified: true,
       };
 
@@ -361,18 +361,18 @@ const deleteUserByEmail = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-export const UserController = { 
+export const UserController = {
   createUser,
-   createAdmin, 
-   getUserProfile, 
-   updateProfile,
-   createSuperAdmin,
-   resendOtp,
-   getUsersWithLocationController, 
-   updateUserLocationController,
-   deleteUser,
+  createAdmin,
+  getUserProfile,
+  updateProfile,
+  createSuperAdmin,
+  resendOtp,
+  getUsersWithLocationController,
+  updateUserLocationController,
+  deleteUser,
   //  googleLoginOrRegister,
   //  googleLoginOrRegister,
-   googleAuthLoginFirebase,
-   deleteUserByEmail
-  };
+  googleAuthLoginFirebase,
+  deleteUserByEmail
+};

@@ -1,59 +1,19 @@
-import { model, Schema } from "mongoose";
-import { ISubscription, SubscriptionModel } from "./subscription.interface";
+import { Schema, model, Types } from "mongoose";
 
+const purchaseSchema = new Schema({
+    userId: { type: Types.ObjectId, ref: "User", required: true, index: true },
+    platform: { type: String, enum: ["google_play"], required: true },
+    productId: { type: String, required: true, index: true },
+    orderId: { type: String, required: true, index: true },
+    purchaseToken: { type: String, required: true, unique: true },
+    acknowledged: { type: Boolean, default: false },
+    autoRenewing: { type: Boolean, default: false },
+    purchaseState: { type: Number },
+    expiryTime: { type: Date },
+    raw: { type: Schema.Types.Mixed },
+    status: { type: String, enum: ["ACTIVE", "CANCELED", "PENDING", "EXPIRED"], default: "PENDING" },
+}, { timestamps: true });
 
-const MemberShipSchema = new Schema<ISubscription, SubscriptionModel>(
-    {
-        customerId: {
-            type: String,
-            required: false
-        },
-        price: {
-            type: Number,
-            required: true
-        },
-        user: {
-            type: Schema.Types.ObjectId,
-            ref: "User",
-            required: true
-        },
-        package: {
-            type: Schema.Types.ObjectId,
-            ref: "Package",
-            required: true
-        },
-        
-        trxId: {
-            type: String,
-            required: true
-        },
-        membershipId: {
-            type: String,
-            required: true
-        },
-        currentPeriodStart: {
-            type: String,
-            required: true
-        },
-        currentPeriodEnd: {
-            type: String,
-            required: true
-        },
-        remaining: {
-            type: Number,
-            required: true
-        },
-        status: {
-            type: String,
-            enum: ["expired", "active", "cancel"],
-            default: "active",
-            required: true
-        },
+purchaseSchema.index({ orderId: 1, platform: 1 });
 
-    },
-    {
-        timestamps: true
-    }
-)
-
-export const Subscription = model<ISubscription, SubscriptionModel>("Subscription", MemberShipSchema)
+export const PurchaseModel = model("Purchase", purchaseSchema);

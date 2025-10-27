@@ -1,101 +1,105 @@
 import { Request, Response } from "express";
-import catchAsync from "../../../shared/catchAsync";
-import { SubscriptionService } from "./subscription.service";
-import sendResponse from "../../../shared/sendResponse";
-import { StatusCodes } from "http-status-codes";
-import { User } from "../user/user.model";
-import ApiError from "../../../errors/ApiError";
-import { Package } from "../package/package.model";
-import { Subscription } from "./subscription.model";
-import Stripe from "stripe";
-import { Types } from "mongoose";
+import { VerifyBodySchema } from "./validation";
+import { getPurchaseById, handleGooglePlayVerify, listPurchases, listPurchasesByUser } from "./subscription.service";
+
+async function verifyAndroidPurchaseController(req: Request, res: Response): Promise<void> {
+    try {
+        const parse = VerifyBodySchema.safeParse(req.body);
+        if (!parse.success) {
+            res.status(400).json({ success: false, errors: parse.error.flatten() });
+            return;
+        }
+
+        const { userId, source, verificationData } = parse.data;
+
+        if (source !== "google_play") {
+            res.status(400).json({ success: false, message: "Invalid source" });
+            return;
+        }
 
 
-const subscriptions = catchAsync( async(req: Request, res: Response)=>{
-    const result = await SubscriptionService.subscriptionsFromDB(req.query);
+        const pkg = process.env.ANDROID_PACKAGE_NAME!;
+        if (verificationData.packageName !== pkg) {
+            res.status(400).json({ success: false, message: "Package name mismatch" });
+            return;
+        }
 
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Membership List Retrieved Successfully",
-        data: result
-    })
-});
+        const result = await handleGooglePlayVerify({
+            userId,
+            verificationData,
+        });
 
-
-
-const subscriptionDetails = catchAsync( async(req: Request, res: Response)=>{
-    const result = await SubscriptionService.subscriptionDetailsFromDB(req.user);
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Membership Details Retrieved Successfully",
-        data: result.subscription
-    })
-});
-
-const companySubscriptionDetails= catchAsync( async(req: Request, res: Response)=>{
-    const result = await SubscriptionService.companySubscriptionDetailsFromDB(req.params.id);
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Company Membership Details Retrieved Successfully",
-        data: result.subscription
-    })
-});
-
-const cancelSubscription = catchAsync(async (req: Request, res: Response) => {
-    const result = await SubscriptionService.cancelSubscription(req.user);
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: result.message,
-        data: null 
-    });
-});
-
-const autoCreateFreeMembership = catchAsync(async (req: Request, res: Response) => {
-    const userId = req.user.id;
-
-    const result = await SubscriptionService.createFreeMembership(userId);
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Free membership created successfully",
-        data: result,
-    });
-});
-
-//get specific user subscription service get
-const getUserSubscriptionController = catchAsync(async (req: Request, res: Response) => {
-    const userId = req.params.id;
-
-    if (!Types.ObjectId.isValid(userId)) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid user ID format.");
+        res.json({ success: true, data: result });
+        return;
+    } catch (err: any) {
+        console.error("verifyAndroidPurchaseController error:", err?.message || err);
+        res.status(500).json({ success: false, message: "Server error", error: err?.message });
+        return;
     }
-
-    const subscription = await SubscriptionService.getUserSubscription(userId);
-
-    if (!subscription) {
-        throw new ApiError(StatusCodes.NOT_FOUND, "No subscription found for this user.");
-    }
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "User subscription retrieved successfully",
-        data: subscription,
-    });
-});
-export const SubscriptionController = {
-    subscriptions,
-    subscriptionDetails,
-    companySubscriptionDetails,
-    cancelSubscription,
-    autoCreateFreeMembership,
-    getUserSubscriptionController
 }
+
+async function getAllPurchasesController(req: Request, res: Response): Promise<void> {
+    try {
+        const {
+            userId,
+            productId,
+            platform,
+            status,
+            search,
+            page = "1",
+            limit = "20",
+            sort = "-createdAt",
+        } = req.query as any;
+
+        const data = await listPurchases(
+            { userId, productId, platform, status, search },
+            Number(page),
+            Number(limit),
+            String(sort)
+        );
+
+        res.json({ success: true, ...data });
+    } catch (err: any) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Server error", error: err?.message });
+    }
+}
+
+async function getUserPurchasesController(req: Request, res: Response): Promise<void> {
+    try {
+        const { userId } = req.params;
+        const { page = "1", limit = "20", sort = "-createdAt" } = req.query as any;
+
+        const data = await listPurchasesByUser(userId, Number(page), Number(limit), String(sort));
+        res.json({ success: true, ...data });
+        return;
+    } catch (err: any) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Server error", error: err?.message });
+        return;
+    }
+}
+
+async function getSinglePurchaseController(req: Request, res: Response): Promise<void> {
+    try {
+        const { id } = req.params;
+        const doc = await getPurchaseById(id);
+        if (!doc) {
+            res.status(404).json({ success: false, message: "Purchase not found" });
+            return;
+        }
+        res.json({ success: true, data: doc });
+        return;
+    } catch (err: any) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Server error", error: err?.message });
+        return;
+    }
+}
+
+export const inAppPurchaseController = {
+    verifyAndroidPurchaseController,
+    getAllPurchasesController,
+    getUserPurchasesController,
+    getSinglePurchaseController,
+};

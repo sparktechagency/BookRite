@@ -1,32 +1,31 @@
 import express from "express";
 import auth from "../../middlewares/auth";
 import { USER_ROLES } from "../../../enums/user";
-import { SubscriptionController } from "./subscription.controller";
+import { inAppPurchaseController } from "./subscription.controller";
 const router = express.Router();
 
-router.get("/", 
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), 
-    SubscriptionController.subscriptions
+router.get("/",
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    inAppPurchaseController.getAllPurchasesController
 );
 
-router.get("/details", 
-    auth(USER_ROLES.USER), 
-    SubscriptionController.subscriptionDetails
+router.post("/verify",
+    inAppPurchaseController.verifyAndroidPurchaseController
 );
 
-router.get("/:id", 
-    auth(USER_ROLES.USER, USER_ROLES.ADMIN), 
-    SubscriptionController.companySubscriptionDetails
+router.get("user/:id",
+
+    inAppPurchaseController.getUserPurchasesController
 )
 
-router.get("/user/:id", 
-    auth(USER_ROLES.ADMIN), 
-    SubscriptionController.getUserSubscriptionController
+router.get("/:id",
+    auth(USER_ROLES.ADMIN),
+    inAppPurchaseController.getSinglePurchaseController
 )
 
-router.post("/cancel", 
-    auth(USER_ROLES.USER), 
-    SubscriptionController.cancelSubscription
-);
+// router.post("/cancel",
+//     auth(USER_ROLES.USER),
+//     inAppPurchaseController.cancelSubscription
+// );
 
-export const SubscriptionRoutes = router;
+export const inAppPurchaseRoutes = router;
