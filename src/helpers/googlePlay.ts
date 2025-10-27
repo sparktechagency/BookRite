@@ -2,29 +2,35 @@ import { google } from "googleapis";
 
 const PACKAGE_NAME = process.env.ANDROID_PACKAGE_NAME!;
 
-function getJWT() {
-    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL!;
-    const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
+function normalizeKey(k?: string) {
+    return (k || "").replace(/\\n/g, "\n").trim();
+}
 
-    // Scopes for Android Publisher
-    const scopes = ["https://www.googleapis.com/auth/androidpublisher"];
-
-    const jwt = new google.auth.JWT({
-        email: clientEmail,
-        key: privateKey,
-        scopes,
+async function getAuth() {
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        return google.auth.getClient({
+            scopes: ["https://www.googleapis.com/auth/androidpublisher"],
+        });
+    }
+    const email = process.env.GOOGLE_CLIENT_EMAIL!;
+    const key = normalizeKey(process.env.GOOGLE_PRIVATE_KEY);
+    return new google.auth.JWT({
+        email,
+        key,
+        scopes: ["https://www.googleapis.com/auth/androidpublisher"],
     });
-
-    return jwt;
 }
 
 export async function getAndroidPublisher() {
-    const auth = getJWT();
-    await auth.authorize();
+    const auth = await getAuth();
+    if (typeof (auth as any).authorize === "function") {
+        // @ts-ignore
+        await (auth as any).authorize();
+    }
     return google.androidpublisher({ version: "v3", auth });
 }
 
-// Subscription verify
+
 export async function verifySubscription(productId: string, token: string) {
     const api = await getAndroidPublisher();
     const res = await api.purchases.subscriptions.get({
@@ -32,10 +38,9 @@ export async function verifySubscription(productId: string, token: string) {
         subscriptionId: productId,
         token,
     });
-    return res.data; // has expiryTimeMillis, paymentState, acknowledged, autoRenewing, cancelReason, etc.
+    return res.data;
 }
 
-// Subscription acknowledge
 export async function acknowledgeSubscription(productId: string, token: string) {
     const api = await getAndroidPublisher();
     await api.purchases.subscriptions.acknowledge({
@@ -46,7 +51,15 @@ export async function acknowledgeSubscription(productId: string, token: string) 
     });
 }
 
-// (ঐচ্ছিক) যদি এক-টাইম in-app পণ্য থাকত
+export async function verifySubscriptionV2(token: string) {
+    const api = await getAndroidPublisher();
+    const res = await api.purchases.subscriptionsv2.get({
+        packageName: PACKAGE_NAME,
+        token,
+    });
+    return res.data;
+}
+
 export async function verifyInAppProduct(productId: string, token: string) {
     const api = await getAndroidPublisher();
     const res = await api.purchases.products.get({
@@ -54,7 +67,7 @@ export async function verifyInAppProduct(productId: string, token: string) {
         productId,
         token,
     });
-    return res.data; // has purchaseState, consumptionState, acknowledged, purchaseTimeMillis
+    return res.data;
 }
 
 export async function acknowledgeInAppProduct(productId: string, token: string) {

@@ -13,7 +13,7 @@ router.post("/verify",
     inAppPurchaseController.verifyAndroidPurchase
 );
 
-router.get("user/:id",
+router.get("/user/:id",
 
     inAppPurchaseController.getUserPurchases
 )
