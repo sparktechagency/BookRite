@@ -15,7 +15,7 @@ import { BookmarkRoutes } from '../app/modules/bookmark/bookmark.routes';
 import { WcServiceRoutes } from '../app/modules/service/servicewc.Routes';
 import { BookingRoutes } from '../app/modules/booking/booking.route';
 import { AdminRoutes } from '../app/modules/admin/admin.routes';
-import { inAppPurchaseRoutes } from '../app/modules/subscription/subscription.routes';
+import { inAppPurchaseRoutes } from '../app/modules/inApp/subscription.routes';
 import { PackageRoutes } from '../app/modules/package/package.routes';
 import { ReservationRoutes } from '../app/modules/reservation/reservation.routes';
 import { FaqRoutes } from '../app/modules/faq/faq.routes';

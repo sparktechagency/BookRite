@@ -4,7 +4,7 @@ import ApiError from '../../errors/ApiError';
 import stripe from '../../config/stripe';
 import { User } from '../../app/modules/user/user.model';
 import { Package } from '../modules/package/package.model';
-import { Subscription } from '../modules/subscription/subscription.model';
+import { Subscription } from '../modules/inApp/subscription.model';
 import { ObjectId, Schema } from 'mongoose';
 import { sendNotifications } from '../../helpers/notificationsHelper';
 import { IUser } from '../modules/user/user.interface';
@@ -73,7 +73,7 @@ const getPackageByProductId = async (productId: string): Promise<IPackage> => {
     throw new ApiError(StatusCodes.NOT_FOUND, `Pricing plan with Product ID: ${productId} not found`);
   }
   return plan.toObject();
-   
+
 };
 
 // Helper function to create or update subscription

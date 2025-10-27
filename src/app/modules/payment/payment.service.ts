@@ -6,10 +6,10 @@ import config from '../../../config';
 import ApiError from '../../../errors/ApiError';
 import { Booking } from '../booking/booking.model';
 import { User } from '../user/user.model';
-import { Servicewc } from '../service/serviceswc.model'; 
+import { Servicewc } from '../service/serviceswc.model';
 import { Package } from '../package/package.model';
 import { v4 as uuidv4 } from 'uuid';
-import { Subscription } from '../subscription/subscription.model';
+import { Subscription } from '../inApp/subscription.model';
 
 const stripe = new Stripe(config.stripe.stripe_api_secret as string, {
   apiVersion: '2022-11-15',
@@ -110,7 +110,7 @@ const createPaymentSession = async (bookingId: string, user: any) => {
 
 const getPaymentStatus = async (bookingId: string) => {
   const booking = await Booking.findById(bookingId);
-  
+
   if (!booking) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
   }
@@ -133,7 +133,7 @@ const getPaymentStatus = async (bookingId: string) => {
   // Check payment status from Stripe
   try {
     const session = await stripe.checkout.sessions.retrieve(booking.paymentSessionId);
-    
+
     if (session.payment_status === 'paid' && booking.paymentStatus !== 'Paid' as any) {
       // Update booking payment status
       booking.paymentStatus = 'Paid';
@@ -158,14 +158,14 @@ const getPaymentStatus = async (bookingId: string) => {
 const handlePaymentSuccess = async (session: Stripe.Checkout.Session) => {
   try {
     const bookingId = session.metadata?.bookingId;
-    
+
     if (!bookingId) {
       console.error('No booking ID found in session metadata');
       return;
     }
 
     const booking = await Booking.findById(bookingId);
-    
+
     if (!booking) {
       console.error(`Booking not found for ID: ${bookingId}`);
       return;
@@ -173,17 +173,17 @@ const handlePaymentSuccess = async (session: Stripe.Checkout.Session) => {
 
     // Update booking payment status
     booking.paymentStatus = 'Paid';
-    
+
     // Optionally update booking status here if you want to automatically 
     // move it to a different status upon successful payment
     // booking.status = 'Accepted'; 
 
     await booking.save();
-    
+
     console.log(`Payment completed for booking ${bookingId}`);
-    
+
     // Additional logic here - e.g., send notifications, update service provider's dashboard, etc.
-    
+
   } catch (error) {
     console.error('Error processing payment success:', error);
   }
@@ -192,7 +192,7 @@ const handlePaymentSuccess = async (session: Stripe.Checkout.Session) => {
 
 const createRefund = async (bookingId: string) => {
   const booking = await Booking.findById(bookingId);
-  
+
   if (!booking) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Booking not found');
   }
@@ -208,14 +208,14 @@ const createRefund = async (bookingId: string) => {
   try {
     // Get the session to find the payment intent
     const session = await stripe.checkout.sessions.retrieve(booking.paymentSessionId);
-    
+
     if (!session.payment_intent) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'No payment intent found for this session');
     }
 
     // Get payment intent to find the charge ID
     const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent as string);
-    
+
     if (!paymentIntent.latest_charge) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'No charge found for this payment');
     }
@@ -247,7 +247,7 @@ const handleRefundSuccess = async (charge: Stripe.Charge) => {
   try {
     // Find the related payment intent
     const paymentIntentId = charge.payment_intent;
-    
+
     if (!paymentIntentId) {
       console.error('No payment intent ID found in charge');
       return;
@@ -255,7 +255,7 @@ const handleRefundSuccess = async (charge: Stripe.Charge) => {
 
     // Get payment intent
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId as string);
-    
+
     // Get session from payment intent metadata or by querying sessions
     const sessions = await stripe.checkout.sessions.list({
       payment_intent: paymentIntentId as string,
@@ -269,7 +269,7 @@ const handleRefundSuccess = async (charge: Stripe.Charge) => {
 
     const session = sessions.data[0];
     const bookingId = session.metadata?.bookingId;
-    
+
     if (!bookingId) {
       console.error('No booking ID found in session metadata');
       return;
@@ -277,7 +277,7 @@ const handleRefundSuccess = async (charge: Stripe.Charge) => {
 
     // Update booking payment status
     const booking = await Booking.findById(bookingId);
-    
+
     if (!booking) {
       console.error(`Booking not found for ID: ${bookingId}`);
       return;
@@ -285,9 +285,9 @@ const handleRefundSuccess = async (charge: Stripe.Charge) => {
 
     booking.paymentStatus = 'Refunded';
     await booking.save();
-    
+
     console.log(`Refund completed for booking ${bookingId}`);
-    
+
   } catch (error) {
     console.error('Error processing refund success:', error);
   }

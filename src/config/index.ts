@@ -13,8 +13,8 @@ export default {
   jwt: {
     jwt_secret: process.env.JWT_SECRET,
     jwt_expire_in: process.env.JWT_EXPIRE_IN,
-    jwtRefreshExpiresIn:process.env.JWT_REFRESH_EXPIRES_IN,
-    jwtRefreshSecret:process.env.JWT_REFRESH_SECRET
+    jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN,
+    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET
   },
   email: {
     from: process.env.EMAIL_FROM,
@@ -28,13 +28,19 @@ export default {
     password: process.env.ADMIN_PASSWORD
   },
 
-stripe: {
-  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  stripe_api_secret: process.env.STRIPE_API_KEY,
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  clientUrl: process.env.FRONTEND_URL, 
-  paymentSuccess: `${process.env.FRONTEND_URL}/payment-success`,
-  paymentCancel: `${process.env.FRONTEND_URL}/payment/cancel`,
-},
+  stripe: {
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    stripe_api_secret: process.env.STRIPE_API_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    clientUrl: process.env.FRONTEND_URL,
+    paymentSuccess: `${process.env.FRONTEND_URL}/payment-success`,
+    paymentCancel: `${process.env.FRONTEND_URL}/payment/cancel`,
+  },
+
+  inapp: {
+    ANDROID_PACKAGE_NAMES: process.env.ANDROID_PACKAGE_NAME,
+    GOOGLE_PRIVATE_KEYS: process.env.GOOGLE_PRIVATE_KEY,
+    GOOGLE_CLIENT_EMAILS: process.env.GOOGLE_CLIENT_EMAIL
+  }
 
 };

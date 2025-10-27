@@ -7,7 +7,7 @@ import { User } from 'mercadopago';
 import ApiError from '../../../errors/ApiError';
 import httpStatus from 'http-status';
 import { IUser } from '../user/user.interface';
-import { SubscriptionService } from '../subscription/subscription.service';
+import { SubscriptionService } from '../inApp/subscription.service';
 
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
@@ -33,7 +33,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
     data: {
       Token: result.createToken,
       role: result.role,
-      user: result.user, 
+      user: result.user,
     },
   });
 });
