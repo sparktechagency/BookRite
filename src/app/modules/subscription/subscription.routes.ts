@@ -23,9 +23,5 @@ router.get("/:id",
     inAppPurchaseController.getSinglePurchase
 )
 
-// router.post("/cancel",
-//     auth(USER_ROLES.USER),
-//     inAppPurchaseController.cancelSubscription
-// );
 
 export const inAppPurchaseRoutes = router;
