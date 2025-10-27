@@ -13,7 +13,7 @@ export const AndroidVerificationDataSchema = z.object({
 });
 
 export const VerifyBodySchema = z.object({
-    userId: z.string(), // তোমার অ্যাপে যে ইউজার কিনেছে
+    userId: z.string(),
     source: z.enum(["google_play"]),
     verificationData: AndroidVerificationDataSchema,
 });

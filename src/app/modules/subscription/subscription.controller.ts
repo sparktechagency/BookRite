@@ -1,110 +1,119 @@
-import { NextFunction, Request, Response } from "express";
-import { VerifyBodySchema } from "./validation";
-import { getPurchaseById, handleGooglePlayVerify, listPurchases, listPurchasesByUser } from "./subscription.service";
+import { Request, Response } from "express";
+import { StatusCodes } from "http-status-codes";
 import catchAsync from "../../../shared/catchAsync";
+import sendResponse from "../../../shared/sendResponse";
+import { VerifyBodySchema } from "./validation";
+import { InAppPurchaseService } from "./subscription.service";
 
-const verifyAndroidPurchase = catchAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const parse = VerifyBodySchema.safeParse(req.body);
-            if (!parse.success) {
-                res.status(400).json({ success: false, errors: parse.error.flatten() });
-                return;
-            }
-
-            const { userId, source, verificationData } = parse.data;
-
-            if (source !== "google_play") {
-                res.status(400).json({ success: false, message: "Invalid source" });
-                return;
-            }
-
-            const pkg = process.env.ANDROID_PACKAGE_NAME!;
-            if (verificationData.packageName !== pkg) {
-                res.status(400).json({ success: false, message: "Package name mismatch" });
-                return;
-            }
-
-            const result = await handleGooglePlayVerify({
-                userId,
-                verificationData,
-            });
-
-            res.json({ success: true, data: result });
-            return;
-        } catch (err: any) {
-            console.error("verifyAndroidPurchaseController error:", err?.message || err);
-            res.status(500).json({ success: false, message: "Server error", error: err?.message });
-            return;
-        }
+const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => {
+    const parsed = VerifyBodySchema.safeParse(req.body);
+    if (!parsed.success) {
+        return sendResponse(res, {
+            success: false,
+            statusCode: StatusCodes.BAD_REQUEST,
+            message: "Validation error",
+            data: parsed.error.flatten(),
+        });
     }
-)
+    const { userId, source, verificationData } = parsed.data;
 
-
-const getAllPurchases = catchAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const {
-                userId,
-                productId,
-                platform,
-                status,
-                search,
-                page = "1",
-                limit = "20",
-                sort = "-createdAt",
-            } = req.query as any;
-
-            const data = await listPurchases(
-                { userId, productId, platform, status, search },
-                Number(page),
-                Number(limit),
-                String(sort)
-            );
-
-            res.json({ success: true, ...data });
-        } catch (err: any) {
-            console.error(err);
-            res.status(500).json({ success: false, message: "Server error", error: err?.message });
-        }
+    if (source !== "google_play") {
+        return sendResponse(res, {
+            success: false,
+            statusCode: StatusCodes.BAD_REQUEST,
+            message: "Invalid source",
+            data: null,
+        });
     }
-)
 
-const getUserPurchases = catchAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const { userId } = req.params;
-            const { page = "1", limit = "20", sort = "-createdAt" } = req.query as any;
-
-            const data = await listPurchasesByUser(userId, Number(page), Number(limit), String(sort));
-            res.json({ success: true, ...data });
-            return;
-        } catch (err: any) {
-            console.error(err);
-            res.status(500).json({ success: false, message: "Server error", error: err?.message });
-            return;
-        }
+    const pkg = process.env.ANDROID_PACKAGE_NAME!;
+    if (verificationData.packageName !== pkg) {
+        return sendResponse(res, {
+            success: false,
+            statusCode: StatusCodes.BAD_REQUEST,
+            message: "Package name mismatch",
+            data: null,
+        });
     }
-)
 
-const getSinglePurchase = catchAsync(
-    async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const { id } = req.params;
-            const doc = await getPurchaseById(id);
-            if (!doc) {
-                res.status(404).json({ success: false, message: "Purchase not found" });
-                return;
-            }
-            res.json({ success: true, data: doc });
-            return;
-        } catch (err: any) {
-            console.error(err);
-            res.status(500).json({ success: false, message: "Server error", error: err?.message });
-            return;
-        }
+    const result = await InAppPurchaseService.verifyAndroidPurchaseToDB({
+        userId,
+        verificationData,
+    });
+
+    return sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: "Purchase verified successfully",
+        data: result,
+    });
+});
+
+const getAllPurchases = catchAsync(async (req: Request, res: Response) => {
+    const {
+        userId,
+        productId,
+        platform,
+        status,
+        search,
+        page = "1",
+        limit = "20",
+        sort = "-createdAt",
+    } = req.query as any;
+
+    const data = await InAppPurchaseService.listPurchasesFromDB(
+        { userId, productId, platform, status, search },
+        Number(page),
+        Number(limit),
+        String(sort)
+    );
+
+    return sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: "Purchases retrieved successfully",
+        data,
+    });
+});
+
+const getUserPurchases = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { page = "1", limit = "20", sort = "-createdAt" } = req.query as any;
+
+    const data = await InAppPurchaseService.listPurchasesByUserFromDB(
+        userId,
+        Number(page),
+        Number(limit),
+        String(sort)
+    );
+
+    return sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: "User purchases retrieved successfully",
+        data,
+    });
+});
+
+const getSinglePurchase = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const doc = await InAppPurchaseService.getPurchaseByIdFromDB(id);
+    if (!doc) {
+        return sendResponse(res, {
+            success: false,
+            statusCode: StatusCodes.NOT_FOUND,
+            message: "Purchase not found",
+            data: null,
+        });
     }
-)
+
+    return sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: "Purchase retrieved successfully",
+        data: doc,
+    });
+});
 
 export const inAppPurchaseController = {
     verifyAndroidPurchase,
