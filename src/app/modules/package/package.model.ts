@@ -6,40 +6,40 @@ const packageSchema = new Schema<IPackage, PackageModel>(
     {
         title: {
             type: String,
-            required: true
+            required: false
         },
-            description: {
-            type: [String],   
-            required: true
+        description: {
+            type: [String],
+            required: false
         },
-      price: { 
-        type: Number,
-         required: true,
-         default: 0 //free plan need 
+        price: {
+            type: Number,
+            required: false,
+            default: 0 //free plan need 
         },
-      priceId: { type: String, required: false }, 
+        priceId: { type: String, required: false },
         duration: {
             type: String,
-            enum: ['1 month' , '3 months' , '6 months' , '1 year'],
-            required: true
+            enum: ['1 month', '3 months', '6 months', '1 year'],
+            required: false
         },
         paymentType: {
             type: String,
-            enum: ['Monthly' , 'Yearly'],
-            required: true
+            enum: ['Monthly', 'Yearly'],
+            required: false
         },
         productId: {
             type: String,
-            required: true
+            required: false
         },
         credit: {
             type: Number,
-            required: true,
+            required: false,
             default: 10,
         },
         paymentLink: {
             type: String,
-            required: true
+            required: false
         },
         status: {
             type: String,
@@ -47,9 +47,9 @@ const packageSchema = new Schema<IPackage, PackageModel>(
             default: "Active"
         },
         isFree: {
-      type: Boolean,
-      default: false,
-    },
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true
