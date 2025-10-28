@@ -70,23 +70,7 @@ const getPackageDetailsFromDB = async (id: string): Promise<IPackage | null> => 
   return result;
 }
 
-const deletePackageToDB = async (id: string): Promise<IPackage | null> => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID")
-  }
 
-  const result = await Package.findByIdAndUpdate(
-    { _id: id },
-    { status: "Delete" },
-    { new: true }
-  );
-
-  if (!result) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to deleted Package")
-  }
-
-  return result;
-}
 
 
 
@@ -95,5 +79,4 @@ export const PackageService = {
   updatePackageToDB,
   getPackageFromDB,
   getPackageDetailsFromDB,
-  deletePackageToDB
 }

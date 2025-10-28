@@ -4,7 +4,7 @@ import { PackageService } from "./package.service";
 import sendResponse from "../../../shared/sendResponse";
 import { StatusCodes } from "http-status-codes";
 
-const createPackage = catchAsync(async(req: Request, res: Response)=>{
+const createPackage = catchAsync(async (req: Request, res: Response) => {
     const result = await PackageService.createPackageToDB(req.body);
 
     sendResponse(res, {
@@ -15,7 +15,7 @@ const createPackage = catchAsync(async(req: Request, res: Response)=>{
     })
 })
 
-const updatePackage = catchAsync(async(req: Request, res: Response) => {
+const updatePackage = catchAsync(async (req: Request, res: Response) => {
     console.log("Payload to update:", req.body);
     const result = await PackageService.updatePackageToDB(req.params.id, req.body);
     console.log("Update result:", result);
@@ -28,7 +28,7 @@ const updatePackage = catchAsync(async(req: Request, res: Response) => {
 });
 
 
-const getPackage = catchAsync(async(req: Request, res: Response)=>{
+const getPackage = catchAsync(async (req: Request, res: Response) => {
     const result = await PackageService.getPackageFromDB(req.query.paymentType as string);
 
     sendResponse(res, {
@@ -39,7 +39,7 @@ const getPackage = catchAsync(async(req: Request, res: Response)=>{
     })
 })
 
-const packageDetails = catchAsync(async(req: Request, res: Response)=>{
+const packageDetails = catchAsync(async (req: Request, res: Response) => {
     const result = await PackageService.getPackageDetailsFromDB(req.params.id);
 
     sendResponse(res, {
@@ -51,21 +51,10 @@ const packageDetails = catchAsync(async(req: Request, res: Response)=>{
 })
 
 
-const deletePackage = catchAsync(async(req: Request, res: Response)=>{
-    const result = await PackageService.deletePackageToDB(req.params.id);
-
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Package Deleted Successfully",
-        data: result
-    })
-})
 
 export const PackageController = {
     createPackage,
     updatePackage,
     getPackage,
     packageDetails,
-    deletePackage
 }
