@@ -8,8 +8,18 @@ import stripe from "../../../config/stripe";
 
 
 const createPackageToDB = async (payload: IPackage): Promise<IPackage | null> => {
-  const result = await Package.create(payload);
-  return result;
+  //when package exist update it but when not exist create it
+  const isExistPackage: any = await Package.findOne({ title: payload.title });
+  if (isExistPackage) {
+    const result = await Package.findOneAndUpdate({ title: payload.title }, payload, {
+      new: true,
+      runValidators: true,
+    });
+    return result;
+  } else {
+    const result = await Package.create(payload);
+    return result;
+  }
 };
 
 const updatePackageToDB = async (
@@ -40,7 +50,7 @@ const updatePackageToDB = async (
 };
 
 
-const getPackageFromDB = async (paymentType: string): Promise<IPackage[]> => {
+const getPackageFromDB = async (paymentType: string): Promise<IPackage | null> => {
   const query: any = {
     status: "Active"
   }
@@ -48,7 +58,7 @@ const getPackageFromDB = async (paymentType: string): Promise<IPackage[]> => {
     query.paymentType = paymentType
   }
 
-  const result = await Package.find(query);
+  const result = await Package.findOne(query);
   return result;
 }
 

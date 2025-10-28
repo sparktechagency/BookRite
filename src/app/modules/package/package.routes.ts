@@ -9,7 +9,7 @@ const router = express.Router()
 
 router
     .route("/")
-    .post(
+    .patch(
         fileUploadHandler(),
         auth(USER_ROLES.SUPER_ADMIN),
         validateRequest(PackageValidation.createPackageZodSchema),
