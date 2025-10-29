@@ -10,6 +10,7 @@ router.get("/",
 );
 
 router.post("/verify",
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
     inAppPurchaseController.verifyAndroidPurchase
 );
 

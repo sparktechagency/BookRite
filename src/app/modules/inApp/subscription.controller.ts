@@ -5,8 +5,53 @@ import sendResponse from "../../../shared/sendResponse";
 import { VerifyBodySchema } from "./validation";
 import { InAppPurchaseService } from "./subscription.service";
 
-const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => {
+// const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => {
+//     const parsed = VerifyBodySchema.safeParse(req.body);
+//     if (!parsed.success) {
+//         return sendResponse(res, {
+//             success: false,
+//             statusCode: StatusCodes.BAD_REQUEST,
+//             message: "Validation error",
+//             data: parsed.error.flatten(),
+//         });
+//     }
+//     const { userId, source, verificationData } = parsed.data;
+
+//     if (source !== "google_play") {
+//         return sendResponse(res, {
+//             success: false,
+//             statusCode: StatusCodes.BAD_REQUEST,
+//             message: "Invalid source",
+//             data: null,
+//         });
+//     }
+
+//     const pkg = process.env.ANDROID_PACKAGE_NAME!;
+//     if (verificationData.packageName !== pkg) {
+//         return sendResponse(res, {
+//             success: false,
+//             statusCode: StatusCodes.BAD_REQUEST,
+//             message: "Package name mismatch",
+//             data: null,
+//         });
+//     }
+
+//     const result = await InAppPurchaseService.verifyAndroidPurchaseToDB({
+//         userId,
+//         verificationData,
+//     });
+
+//     return sendResponse(res, {
+//         success: true,
+//         statusCode: StatusCodes.OK,
+//         message: "Purchase verified successfully",
+//         data: result,
+//     });
+// });
+
+export const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => {
     const parsed = VerifyBodySchema.safeParse(req.body);
+
     if (!parsed.success) {
         return sendResponse(res, {
             success: false,
@@ -15,7 +60,9 @@ const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => 
             data: parsed.error.flatten(),
         });
     }
-    const { userId, source, verificationData } = parsed.data;
+
+    const { source, verificationData } = parsed.data;
+    const userId = req.user?._id?.toString();
 
     if (source !== "google_play") {
         return sendResponse(res, {

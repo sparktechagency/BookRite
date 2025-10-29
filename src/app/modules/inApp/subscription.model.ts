@@ -4,7 +4,7 @@ import { IPurchase, IPurchaseModel } from "./subscription.interface";
 const purchaseSchema = new Schema<IPurchase, IPurchaseModel>(
 
     {
-        userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+        userId: { type: Schema.Types.ObjectId, ref: "User", required: false, index: true },
         platform: { type: String, enum: ["google_play"], required: true },
         productId: { type: String, required: true, index: true },
         orderId: { type: String, required: true, index: true },
