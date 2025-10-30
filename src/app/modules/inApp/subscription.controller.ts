@@ -5,8 +5,9 @@ import sendResponse from "../../../shared/sendResponse";
 import { VerifyBodySchema } from "./validation";
 import { InAppPurchaseService } from "./subscription.service";
 
-// const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => {
+// export const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => {
 //     const parsed = VerifyBodySchema.safeParse(req.body);
+
 //     if (!parsed.success) {
 //         return sendResponse(res, {
 //             success: false,
@@ -15,7 +16,9 @@ import { InAppPurchaseService } from "./subscription.service";
 //             data: parsed.error.flatten(),
 //         });
 //     }
-//     const { userId, source, verificationData } = parsed.data;
+
+//     const { source, verificationData } = parsed.data;
+//     const userId = req.user?._id?.toString();
 
 //     if (source !== "google_play") {
 //         return sendResponse(res, {
@@ -35,7 +38,7 @@ import { InAppPurchaseService } from "./subscription.service";
 //             data: null,
 //         });
 //     }
-
+//     console.log("verificationData:", verificationData);
 //     const result = await InAppPurchaseService.verifyAndroidPurchaseToDB({
 //         userId,
 //         verificationData,
@@ -46,13 +49,15 @@ import { InAppPurchaseService } from "./subscription.service";
 //         statusCode: StatusCodes.OK,
 //         message: "Purchase verified successfully",
 //         data: result,
+
 //     });
 // });
-
 export const verifyAndroidPurchase = catchAsync(async (req: Request, res: Response) => {
-    const parsed = VerifyBodySchema.safeParse(req.body);
+    console.log("🔥 [verifyAndroidPurchase] started ----------------------------");
 
+    const parsed = VerifyBodySchema.safeParse(req.body);
     if (!parsed.success) {
+        console.error("❌ [verifyAndroidPurchase] Validation failed:", parsed.error.flatten());
         return sendResponse(res, {
             success: false,
             statusCode: StatusCodes.BAD_REQUEST,
@@ -63,8 +68,12 @@ export const verifyAndroidPurchase = catchAsync(async (req: Request, res: Respon
 
     const { source, verificationData } = parsed.data;
     const userId = req.user?._id?.toString();
+    console.log("🧩 userId:", userId);
+    console.log("📦 source:", source);
+    console.log("📦 verificationData:", verificationData);
 
     if (source !== "google_play") {
+        console.error("❌ Invalid source:", source);
         return sendResponse(res, {
             success: false,
             statusCode: StatusCodes.BAD_REQUEST,
@@ -75,6 +84,7 @@ export const verifyAndroidPurchase = catchAsync(async (req: Request, res: Respon
 
     const pkg = process.env.ANDROID_PACKAGE_NAME!;
     if (verificationData.packageName !== pkg) {
+        console.error(`❌ Package mismatch: got ${verificationData.packageName}, expected ${pkg}`);
         return sendResponse(res, {
             success: false,
             statusCode: StatusCodes.BAD_REQUEST,
@@ -83,17 +93,30 @@ export const verifyAndroidPurchase = catchAsync(async (req: Request, res: Respon
         });
     }
 
-    const result = await InAppPurchaseService.verifyAndroidPurchaseToDB({
-        userId,
-        verificationData,
-    });
+    try {
+        console.log("⚙️ Verifying with Google Play...");
+        const result = await InAppPurchaseService.verifyAndroidPurchaseToDB({
+            userId,
+            verificationData,
+        });
 
-    return sendResponse(res, {
-        success: true,
-        statusCode: StatusCodes.OK,
-        message: "Purchase verified successfully",
-        data: result,
-    });
+        console.log("✅ [verifyAndroidPurchase] Completed successfully:", result._id);
+
+        return sendResponse(res, {
+            success: true,
+            statusCode: StatusCodes.OK,
+            message: "Purchase verified successfully",
+            data: result,
+        });
+    } catch (err: any) {
+        console.error("🚨 [verifyAndroidPurchase] Error:", err?.message || err);
+        return sendResponse(res, {
+            success: false,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+            message: "Verification failed",
+            data: err?.message || err,
+        });
+    }
 });
 
 const getAllPurchases = catchAsync(async (req: Request, res: Response) => {
