@@ -7,7 +7,7 @@ import { User } from 'mercadopago';
 import ApiError from '../../../errors/ApiError';
 import httpStatus from 'http-status';
 import { IUser } from '../user/user.interface';
-import { SubscriptionService } from '../inApp/subscription.service';
+// import { SubscriptionService } from '../inApp/subscription.service';
 
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
@@ -43,7 +43,7 @@ export const socialLoginController = catchAsync(
     const payload = req.body as IUser;
 
     const result = await socialLoginFromDB(payload);
-    await SubscriptionService.createFreeMembership(result.userId);
+    // await SubscriptionService.createFreeMembership(result.userId);
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
