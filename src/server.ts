@@ -8,6 +8,7 @@ import { socketHelper } from './helpers/socketHelper';
 import { errorLogger, logger } from './shared/logger';
 import seedSuperAdmin from './DB';
 import { initSocket } from './helpers/socket';
+import { startInAppCron } from './app/modules/inApp/cron.scheduler';
 
 // uncaught exception
 process.on('uncaughtException', error => {
@@ -71,7 +72,7 @@ async function main() {
 }
 
 main();
-
+startInAppCron();
 // SIGTERM
 process.on('SIGTERM', () => {
   logger.info('SIGTERM IS RECEIVED');

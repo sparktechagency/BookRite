@@ -48,6 +48,10 @@ const userSchema = new Schema<IUser>(
     },
     //inApp
     proActive: { type: Boolean, default: false },
+    subscriptionId: {
+      type: String,
+      required: true
+    },
     proExpiresAt: { type: Date, default: null },
     contact: {
       type: String,

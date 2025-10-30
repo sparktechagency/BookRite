@@ -18,6 +18,7 @@ export type IUser = {
   email: string;
   //inApp
   proActive?: boolean;
+  subscriptionId?: string;
   proExpiresAt?: Date;
   password?: string;
   location?: {

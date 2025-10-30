@@ -31,15 +31,15 @@ export async function getAndroidPublisher() {
 }
 
 
-export async function verifySubscription(productId: string, token: string) {
-    const api = await getAndroidPublisher();
-    const res = await api.purchases.subscriptions.get({
-        packageName: PACKAGE_NAME,
-        subscriptionId: productId,
-        token,
-    });
-    return res.data;
-}
+// export async function verifySubscription(productId: string, token: string) {
+//     const api = await getAndroidPublisher();
+//     const res = await api.purchases.subscriptions.get({
+//         packageName: PACKAGE_NAME,
+//         subscriptionId: productId,
+//         token,
+//     });
+//     return res.data;
+// }
 
 export async function acknowledgeSubscription(productId: string, token: string) {
     const api = await getAndroidPublisher();
@@ -78,4 +78,21 @@ export async function acknowledgeInAppProduct(productId: string, token: string) 
         token,
         requestBody: { developerPayload: "ack_by_backend" },
     });
+}
+
+export async function verifySubscription(productId: string, token: string) {
+    const api = await getAndroidPublisher();
+    const res = await api.purchases.subscriptions.get({
+        packageName: PACKAGE_NAME,
+        subscriptionId: productId,
+        token,
+    });
+
+    // Check the cancellation status
+    if (res.data.cancelReason || res.data.purchaseType === 2) {
+        // If the subscription is canceled (cancelReason or purchaseState 2)
+        return { status: "CANCELED", ...res.data };
+    }
+
+    return { status: "ACTIVE", ...res.data };
 }
