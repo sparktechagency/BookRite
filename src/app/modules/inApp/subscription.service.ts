@@ -39,96 +39,96 @@ const createOrReturnExistingPurchase = async (purchaseToken: string) => {
 };
 
 export const InAppPurchaseService = {
-    // verifyAndroidPurchaseToDB: async (payload: VerifyInput): Promise<IPurchaseDoc> => {
-    //     const {
-    //         userId,
-    //         verificationData: { orderId, productId, purchaseToken, autoRenewing },
-    //     } = payload;
+    verifyAndroidPurchaseToDB: async (payload: VerifyInput): Promise<IPurchaseDoc> => {
+        const {
+            userId,
+            verificationData: { orderId, productId, purchaseToken, autoRenewing },
+        } = payload;
 
-    //     const existing = await createOrReturnExistingPurchase(purchaseToken);
-    //     if (existing) return existing;
+        const existing = await createOrReturnExistingPurchase(purchaseToken);
+        if (existing) return existing;
 
-    //     const isSub = !!autoRenewing;
+        const isSub = !!autoRenewing;
 
-    //     if (isSub) {
-    //         const sub = await verifySubscription(productId, purchaseToken);
+        if (isSub) {
+            const sub = await verifySubscription(productId, purchaseToken);
 
-    //         const acknowledged = isAcknowledged(sub.acknowledgementState);
-    //         const autoRenew = !!sub.autoRenewing;
-    //         const paymentState = typeof sub.paymentState === "number" ? sub.paymentState : undefined;
-    //         const expiryTime = sub.expiryTimeMillis ? new Date(Number(sub.expiryTimeMillis)) : undefined;
+            const acknowledged = isAcknowledged(sub.acknowledgementState);
+            const autoRenew = !!sub.autoRenewing;
+            const paymentState = typeof sub.paymentState === "number" ? sub.paymentState : undefined;
+            const expiryTime = sub.expiryTimeMillis ? new Date(Number(sub.expiryTimeMillis)) : undefined;
 
-    //         // Play requires acknowledge
-    //         if (!acknowledged) {
-    //             await acknowledgeSubscription(productId, purchaseToken);
-    //         }
+            // Play requires acknowledge
+            if (!acknowledged) {
+                await acknowledgeSubscription(productId, purchaseToken);
+            }
 
-    //         // derive status
-    //         let status: PurchaseStatus = "PENDING";
-    //         const now = new Date();
-    //         if (expiryTime && expiryTime > now) status = "ACTIVE";
-    //         if (expiryTime && expiryTime <= now) status = "EXPIRED";
-    //         if (typeof sub.cancelReason === "number") status = "CANCELED";
-    //         if (paymentState === 2) status = "PENDING";
+            // derive status
+            let status: PurchaseStatus = "PENDING";
+            const now = new Date();
+            if (expiryTime && expiryTime > now) status = "ACTIVE";
+            if (expiryTime && expiryTime <= now) status = "EXPIRED";
+            if (typeof sub.cancelReason === "number") status = "CANCELED";
+            if (paymentState === 2) status = "PENDING";
 
-    //         const created = await PurchaseModel.create({
-    //             userId,
-    //             platform: "google_play",
-    //             productId,
-    //             orderId,
-    //             purchaseToken,
-    //             acknowledged: true,
-    //             autoRenewing: autoRenew,
-    //             purchaseState: paymentState,
-    //             expiryTime,
-    //             raw: sub,
-    //             status,
-    //         } as unknown) as IPurchase;
+            const created = await PurchaseModel.create({
+                userId,
+                platform: "google_play",
+                productId,
+                orderId,
+                purchaseToken,
+                acknowledged: true,
+                autoRenewing: autoRenew,
+                purchaseState: paymentState,
+                expiryTime,
+                raw: sub,
+                status,
+            } as unknown) as IPurchase;
 
-    //         if (!created) {
-    //             throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Purchase");
-    //         }
+            if (!created) {
+                throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Purchase");
+            }
 
-    //         // Update user entitlement
-    //         if (status === "ACTIVE" && expiryTime) {
-    //             await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: expiryTime }, { new: true });
-    //         } else if (status === "EXPIRED" || status === "CANCELED") {
-    //             await UserModel.findByIdAndUpdate(userId, { proActive: false, proExpiresAt: null }, { new: true });
-    //         }
+            // Update user entitlement
+            if (status === "ACTIVE" && expiryTime) {
+                await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: expiryTime }, { new: true });
+            } else if (status === "EXPIRED" || status === "CANCELED") {
+                await UserModel.findByIdAndUpdate(userId, { proActive: false, proExpiresAt: null }, { new: true });
+            }
 
-    //         created;
-    //     }
+            created;
+        }
 
-    //     // One-time in-app product flow
-    //     const prod = await verifyInAppProduct(productId, purchaseToken);
-    //     const acknowledged = isAcknowledged(prod.acknowledgementState);
-    //     if (!acknowledged) {
-    //         await acknowledgeInAppProduct(productId, purchaseToken);
-    //     }
+        // One-time in-app product flow
+        const prod = await verifyInAppProduct(productId, purchaseToken);
+        const acknowledged = isAcknowledged(prod.acknowledgementState);
+        if (!acknowledged) {
+            await acknowledgeInAppProduct(productId, purchaseToken);
+        }
 
-    //     const status: PurchaseStatus = prod.purchaseState === 0 ? "ACTIVE" : "PENDING";
+        const status: PurchaseStatus = prod.purchaseState === 0 ? "ACTIVE" : "PENDING";
 
-    //     const created = await PurchaseModel.create({
-    //         userId,
-    //         platform: "google_play",
-    //         productId,
-    //         orderId,
-    //         purchaseToken,
-    //         acknowledged: true,
-    //         autoRenewing: false,
-    //         purchaseState: prod.purchaseState,
-    //         raw: prod,
-    //         status,
-    //     } as unknown as IPurchase);
+        const created = await PurchaseModel.create({
+            userId,
+            platform: "google_play",
+            productId,
+            orderId,
+            purchaseToken,
+            acknowledged: true,
+            autoRenewing: false,
+            purchaseState: prod.purchaseState,
+            raw: prod,
+            status,
+        } as unknown as IPurchase);
 
-    //     if (!created) {
-    //         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Purchase");
-    //     }
+        if (!created) {
+            throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Purchase");
+        }
 
-    //     await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: null }, { new: true });
+        await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: null }, { new: true });
 
-    //     return created;
-    // },
+        return created;
+    },
 
     listPurchasesFromDB: async (
         filters: PurchaseFilters,

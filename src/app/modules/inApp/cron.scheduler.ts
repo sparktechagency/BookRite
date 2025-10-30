@@ -1,5 +1,4 @@
 import { UserValidation } from './../user/user.validation';
-// src/app/modules/inApp/cron.scheduler.ts
 import cron from "node-cron";
 import { PurchaseModel } from "./subscription.model";
 import { User as UserModel } from "../user/user.model";
@@ -13,7 +12,6 @@ import {
 } from "../../../helpers/googlePlay";
 
 const isAck = (st?: number | null) => st === 1;
-
 function deriveStatusFromSub(sub: any): PurchaseStatus {
     const now = new Date();
     const expiry =
