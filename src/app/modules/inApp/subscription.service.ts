@@ -132,30 +132,18 @@ export const InAppPurchaseService = {
     //     return created;
     // },
     verifyAndroidPurchaseToDB: async (payload: VerifyInput): Promise<IPurchaseDoc> => {
-        console.log("🧭 [Service] Starting verifyAndroidPurchaseToDB...");
         const {
             userId,
             verificationData: { orderId, productId, purchaseToken, autoRenewing },
         } = payload;
 
-        console.log("📦 userId:", userId);
-        console.log("📦 productId:", productId);
-        console.log("📦 orderId:", orderId);
-        console.log("📦 autoRenewing:", autoRenewing);
-
         const existing = await createOrReturnExistingPurchase(purchaseToken);
-        if (existing) {
-            console.log("ℹ️ Purchase already exists:", existing._id);
-            return existing;
-        }
+        if (existing) return existing;
 
         const isSub = !!autoRenewing;
-        console.log("📡 Detected purchase type:", isSub ? "Subscription" : "One-time Product");
 
         if (isSub) {
-            console.log("🔍 Verifying subscription with Google...");
             const sub = await verifySubscription(productId, purchaseToken);
-            console.log("🟩 Subscription response received:", sub);
 
             const acknowledged = isAcknowledged(sub.acknowledgementState);
             const autoRenew = !!sub.autoRenewing;
@@ -163,18 +151,15 @@ export const InAppPurchaseService = {
             const expiryTime = sub.expiryTimeMillis ? new Date(Number(sub.expiryTimeMillis)) : undefined;
 
             if (!acknowledged) {
-                console.log("🟨 Acknowledging subscription...");
                 await acknowledgeSubscription(productId, purchaseToken);
             }
 
             let status: PurchaseStatus = "PENDING";
             const now = new Date();
             if (expiryTime && expiryTime > now) status = "ACTIVE";
-            if (expiryTime && expiryTime <= now) status = "EXPIRED";
+            else if (expiryTime && expiryTime <= now) status = "EXPIRED";
             if (typeof sub.cancelReason === "number") status = "CANCELED";
             if (paymentState === 2) status = "PENDING";
-
-            console.log("📊 Derived subscription status:", status);
 
             const created = await PurchaseModel.create({
                 userId,
@@ -188,55 +173,45 @@ export const InAppPurchaseService = {
                 expiryTime,
                 raw: sub,
                 status,
-            } as unknown) as IPurchase;
-
-            console.log("✅ Subscription created in DB:", created.userId);
+            });
 
             if (status === "ACTIVE" && expiryTime) {
-                console.log("🟢 Activating user subscription...");
                 await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: expiryTime }, { new: true });
             } else if (status === "EXPIRED" || status === "CANCELED") {
-                console.log("🔴 Marking user as inactive...");
                 await UserModel.findByIdAndUpdate(userId, { proActive: false, proExpiresAt: null }, { new: true });
             }
 
-            created;
+            // ⬅️ THIS was missing
+            return created;
+        } else {
+            // One-time product flow
+            const prod = await verifyInAppProduct(productId, purchaseToken);
+            const acknowledged = isAcknowledged(prod.acknowledgementState);
+            if (!acknowledged) {
+                await acknowledgeInAppProduct(productId, purchaseToken);
+            }
+
+            const status: PurchaseStatus = prod.purchaseState === 0 ? "ACTIVE" : "PENDING";
+
+            const created = await PurchaseModel.create({
+                userId,
+                platform: "google_play",
+                productId,
+                orderId,
+                purchaseToken,
+                acknowledged: true,
+                autoRenewing: false,
+                purchaseState: prod.purchaseState,
+                raw: prod,
+                status,
+            });
+
+            await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: null }, { new: true });
+
+            return created;
         }
-
-        // One-time product
-        console.log("🔍 Verifying one-time in-app product...");
-        const prod = await verifyInAppProduct(productId, purchaseToken);
-        console.log("🟩 Product response:", prod);
-
-        const acknowledged = isAcknowledged(prod.acknowledgementState);
-        if (!acknowledged) {
-            console.log("🟨 Acknowledging one-time product...");
-            await acknowledgeInAppProduct(productId, purchaseToken);
-        }
-
-        const status: PurchaseStatus = prod.purchaseState === 0 ? "ACTIVE" : "PENDING";
-        console.log("📊 Derived product status:", status);
-
-        const created = await PurchaseModel.create({
-            userId,
-            platform: "google_play",
-            productId,
-            orderId,
-            purchaseToken,
-            acknowledged: true,
-            autoRenewing: false,
-            purchaseState: prod.purchaseState,
-            raw: prod,
-            status,
-        } as unknown as IPurchase);
-
-        console.log("✅ Product created in DB:", created._id);
-
-        await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: null }, { new: true });
-        console.log("🟢 User marked as proActive");
-
-        return created;
     },
+
 
     listPurchasesFromDB: async (
         filters: PurchaseFilters,
