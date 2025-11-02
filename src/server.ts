@@ -27,9 +27,9 @@ declare global {
 
 async function main() {
   try {
-    seedSuperAdmin();
     await mongoose.connect(config.database_url as string);
     logger.info(colors.green('🚀 Database connected successfully'));
+    await seedSuperAdmin();
 
 
     const port =
