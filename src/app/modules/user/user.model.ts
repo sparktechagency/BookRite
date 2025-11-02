@@ -50,7 +50,7 @@ const userSchema = new Schema<IUser>(
     proActive: { type: Boolean, default: false },
     subscriptionId: {
       type: String,
-      required: true
+      required: false
     },
     proExpiresAt: { type: Date, default: null },
     contact: {
