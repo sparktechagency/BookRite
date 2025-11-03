@@ -5,7 +5,7 @@ import globalErrorHandler from './app/middlewares/globalErrorHandler';
 import router from './routes';
 import { Morgan } from './shared/morgen';
 import path from 'path';
-import {handleStripeWebhooks, PaymentController} from './app/modules/payment/payment.controller';
+import { handleStripeWebhooks, PaymentController } from './app/modules/payment/payment.controller';
 import handleStripeWebhook, { unifiedStripeWebhookHandler } from './app/modules/webhook/handleStripeWebhook';
 import auth from './app/middlewares/auth';
 import { User } from './app/modules/user/user.model';
@@ -16,7 +16,7 @@ const app = express();
 
 // app.post('/api/v1/webhook', express.raw({ type: 'application/json' }), PaymentController.handleStripeWebhooks); 
 app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), unifiedStripeWebhookHandler);
-
+app.use('/htmlResponse', express.static(path.join(__dirname, '..', 'htmlResponse')));
 app.use(express.json());
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
@@ -49,8 +49,8 @@ app.use('/api/v1', router);
 // Increase timeout to 30 seconds
 app.use((req, res, next) => {
   res.setTimeout(30000, () => {  // 30 seconds timeout
-      console.log('Request has timed out.');
-      res.sendStatus(408);  // HTTP 408 Request Timeout
+    console.log('Request has timed out.');
+    res.sendStatus(408);  // HTTP 408 Request Timeout
   });
   next();
 });
