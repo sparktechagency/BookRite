@@ -6,7 +6,7 @@ import { googleAuthLoginFirebase, UserController } from './user.controller';
 import { Request, Response } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import { UserValidation } from './user.validation';
-import {socialLoginController} from '../auth/auth.controller'
+import { socialLoginController } from '../auth/auth.controller'
 const router = express.Router();
 
 router.get(
@@ -29,12 +29,12 @@ router.post(
 );
 
 router.delete(
-    '/delete-account',
-    auth(USER_ROLES.ADMIN,USER_ROLES.USER),
-    UserController.deleteUser
+  '/delete-account',
+  auth(USER_ROLES.ADMIN, USER_ROLES.USER),
+  UserController.deleteUser
 );
 router.delete(
-  '/deleteByUser',UserController.deleteUserByEmail
+  '/deleteByUser', UserController.deleteUserByEmail
 )
 router
   .route('/')
@@ -46,19 +46,19 @@ router
     fileUploadHandler(),
     UserController.updateProfile
   );
-  //resend otp
+//resend otp
 router.post(
   '/resend-otp',
   UserController.resendOtp
 );
 
 router.put('/location',
-    auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
-    UserController.updateUserLocationController
+  auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.updateUserLocationController
 );
 router.get('/location',
-    auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
-    UserController.getUsersWithLocationController
+  auth(USER_ROLES.USER, USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN),
+  UserController.getUsersWithLocationController
 );
 
 export const UserRoutes = router;
