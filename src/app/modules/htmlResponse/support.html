@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support Contact</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f4f7fb;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .support-container {
+      background-color: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      text-align: left;
+      width: 100%;
+      max-width: 600px;
+      transform: translateY(50px);
+      opacity: 0;
+      animation: fadeInUp 1s ease-out forwards;
+    }
+
+    h1 {
+      margin: 0 0 20px;
+      color: #1a73e8;
+      font-size: 32px;
+      font-weight: 700;
+      position: relative;
+      animation: slideIn 1.2s ease-out;
+    }
+
+    p {
+      margin: 12px 0;
+      font-size: 18px;
+      color: #555;
+      animation: fadeIn 1.5s ease-in;
+    }
+
+    .highlight {
+      font-weight: bold;
+      color: #007bff;
+      animation: colorPop 1.5s ease-out;
+    }
+
+    .address {
+      margin-left: 60px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(-30px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes colorPop {
+      0% {
+        color: #007bff;
+      }
+
+      50% {
+        color: #0056b3;
+      }
+
+      100% {
+        color: #007bff;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .support-container {
+        padding: 20px 25px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      p {
+        font-size: 16px;
+      }
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 14px;
+      text-align: center;
+      color: #888;
+    }
+
+    footer a {
+      text-decoration: none;
+      color: #007bff;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="support-container">
+    <h1>Support Contact</h1>
+    <p>Email: <span class="highlight">ryadaconnect@gmail.com</span></p>
+    <p>Phone: <span class="highlight">+584242827610</span></p>
+    <p>Address:</p>
+    <p class="highlight address">
+      Quinta Todavia, <br />Los Guayabitos, Baruta
+    </p>
+    <footer>
+      &copy; 2024 Ryada Connect. All Rights Reserved. | <a href="/api/v1/settings/privacy-policy">Privacy Policy</a>
+    </footer>
+  </div>
+</body>
+
+</html>

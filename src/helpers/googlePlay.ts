@@ -31,16 +31,6 @@ export async function getAndroidPublisher() {
 }
 
 
-// export async function verifySubscription(productId: string, token: string) {
-//     const api = await getAndroidPublisher();
-//     const res = await api.purchases.subscriptions.get({
-//         packageName: PACKAGE_NAME,
-//         subscriptionId: productId,
-//         token,
-//     });
-//     return res.data;
-// }
-
 export async function acknowledgeSubscription(productId: string, token: string) {
     const api = await getAndroidPublisher();
     await api.purchases.subscriptions.acknowledge({

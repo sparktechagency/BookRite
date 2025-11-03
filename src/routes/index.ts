@@ -20,6 +20,7 @@ import { PackageRoutes } from '../app/modules/package/package.routes';
 import { ReservationRoutes } from '../app/modules/reservation/reservation.routes';
 import { FaqRoutes } from '../app/modules/faq/faq.routes';
 import { portfolioRoutes } from '../app/modules/portfolio/route.portfolio';
+import SettingsRouter from '../app/modules/settings/setting.route';
 
 const router = express.Router();
 
@@ -45,6 +46,7 @@ const apiRoutes = [
   { path: '/portfolio', route: portfolioRoutes },
   { path: '/admin', route: AdminRoutes },
   { path: '/reservation', route: ReservationRoutes },
+  { path: '/settings', route: SettingsRouter },
 ];
 
 apiRoutes.forEach(route => router.use(route.path, route.route));

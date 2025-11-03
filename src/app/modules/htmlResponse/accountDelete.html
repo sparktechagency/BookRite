@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delete Account Instructions</title>
+  <style>
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f6f9;
+      color: #333;
+      line-height: 1.7;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 50px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+      font-size: 16px;
+      color: #555;
+      border: 1px solid #eaeaea;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1a73e8;
+      font-size: 40px;
+      margin-bottom: 40px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    ol {
+      padding-left: 20px;
+      margin-top: 30px;
+      font-size: 18px;
+      line-height: 1.8;
+      margin-bottom: 40px;
+    }
+
+    li {
+      margin-bottom: 25px;
+      font-weight: 500;
+      position: relative;
+      padding-left: 25px;
+    }
+
+    li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #1a73e8;
+    }
+
+    .highlight {
+      background-color: #e1f5fe;
+      padding: 4px 8px;
+      border-radius: 5px;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+
+    .image-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .image-container img {
+      width: 100%;
+      max-width: 650px;
+      height: auto;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .image-container img:hover {
+      transform: scale(1.05);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn {
+      display: block;
+      background: linear-gradient(135deg, #1a73e8, #007aff);
+      color: #fff;
+      padding: 18px 40px;
+      text-align: center;
+      border-radius: 50px;
+      font-size: 18px;
+      text-decoration: none;
+      font-weight: 600;
+      margin: 40px auto;
+      width: 100%;
+      max-width: 260px;
+      transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, #0051a8, #0f59b7);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 14px;
+      color: #888;
+      padding-top: 20px;
+    }
+
+    footer a {
+      text-decoration: none;
+      color: #1a73e8;
+      font-weight: 600;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Soft Gradient Background */
+    .container {
+      background: linear-gradient(180deg, #ffffff, #f4f6f9);
+    }
+
+    /* Smooth Scroll */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    /* Responsive Images */
+    @media (max-width: 768px) {
+      .image-container img {
+        max-width: 100%;
+      }
+      .btn {
+        width: 100%;
+        padding: 16px 32px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>How to Delete Your Account</h1>
+    <ol>
+      <li>Open the app and navigate to the <span class="highlight">Settings</span> screen.</li>
+      <div class="image-container">
+        <img src="/uploads/images/step1.png" alt="Settings Screen" />
+      </div>
+      <li>Tap on the <span class="highlight">Delete Account</span> option to open the confirmation popup.</li>
+      <div class="image-container">
+        <img src="/uploads/images/step2.png" alt="Settings Menu" />
+      </div>
+      <li>You will be prompted to enter your <span class="highlight">Password</span> to confirm the deletion.</li>
+      <div class="image-container">
+        <img src="/uploads/images/step3.png" alt="Password Entry" />
+      </div>
+      <li>Enter your <span class="highlight">Password</span> to confirm account deletion.</li>
+      <div class="image-container">
+        <img src="/uploads/images/step4.png" alt="Password Entry" />
+      </div>
+      <li>Press the <span class="highlight">Yes</span> button to confirm the account deletion.</li>
+      <div class="image-container">
+        <img src="/uploads/images/step5.png" alt="Delete Confirmation" />
+      </div>
+      <li>Your account will be permanently deleted.</li>
+    </ol>
+    <a href="home" class="btn">Return to Home</a>
+    <footer>
+      &copy; 2025 Ryada Connect. All Rights Reserved. | <a href="/api/v1/settings/privacy-policy">Privacy Policy</a>
+    </footer>
+  </div>
+</body>
+
+</html>
