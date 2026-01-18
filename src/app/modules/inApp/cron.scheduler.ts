@@ -139,7 +139,7 @@ export function startInAppCron() {
         const toCheckStatuses: PurchaseStatus[] = ["ACTIVE", "PENDING"];
 
         const candidates = await PurchaseModel.find({
-            platform: "google_play | apple_store",
+            platform: { $in: ["google_play", "app_store"] },
             status: { $in: toCheckStatuses },
         })
             .select("_id userId productId purchaseToken status expiryTime autoRenewing")

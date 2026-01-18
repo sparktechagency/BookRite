@@ -15,6 +15,6 @@ export const AndroidVerificationDataSchema = z.object({
 export const VerifyBodySchema = z.object({
     
     // source: z.enum(["google_play"]),
-    source: z.enum(["google_play", "apple_store"]),
+    source: z.enum(["google_play", "app_store"]),
     verificationData: AndroidVerificationDataSchema,
 });

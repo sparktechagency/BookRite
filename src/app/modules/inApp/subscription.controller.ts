@@ -37,7 +37,7 @@ import { InAppPurchaseService } from "./subscription.service";
                 data: null,
             });
         }
-    } else if (source === "apple_store") {
+    } else if (source === "app_store") {
         if (verificationData.packageName !== iosBundleId) {
             return sendResponse(res, {
                 success: false,
@@ -50,7 +50,7 @@ import { InAppPurchaseService } from "./subscription.service";
         return sendResponse(res, {
             success: false,
             statusCode: StatusCodes.BAD_REQUEST,
-            message: "Invalid source. Must be 'google_play' or 'apple_store'",
+            message: "Invalid source. Must be 'google_play' or 'app_store'",
             data: null,
         });
     }
@@ -61,7 +61,7 @@ import { InAppPurchaseService } from "./subscription.service";
         // 3. Call Unified Service
         const result = await InAppPurchaseService.verifyPurchaseToDB({
             userId,
-            platform: source as "google_play" | "apple_store",
+            platform: source as "google_play" | "app_store",
             verificationData,
         });
 

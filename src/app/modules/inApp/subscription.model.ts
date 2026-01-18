@@ -5,7 +5,7 @@ const purchaseSchema = new Schema<IPurchase, IPurchaseModel>(
 
     {
         userId: { type: Schema.Types.ObjectId, ref: "User", required: false, index: true },
-        platform: { type: String, enum: ["google_play", "apple_store"], required: true },
+        platform: { type: String, enum: ["google_play", "app_store"], required: true },
         productId: { type: String, required: true, index: true },
         orderId: { type: String, required: true, index: true },
         purchaseToken: { type: String, required: true, unique: true },

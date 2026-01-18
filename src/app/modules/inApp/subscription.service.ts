@@ -26,7 +26,7 @@ import { verifyAppleReceipt } from "../../../helpers/appleStoreHelper";
 // };
 export type VerifyInput = {
     userId: string;
-    platform: "google_play" | "apple_store"; 
+    platform: "google_play" | "app_store"; 
     verificationData: {
         orderId?: string;
         packageName: string;
@@ -57,7 +57,7 @@ const createOrReturnExistingPurchase = async (purchaseToken: string) => {
 const verifyPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
     const { platform } = payload;
 
-    if (platform === "apple_store") {
+    if (platform === "app_store") {
         return await verifyIosPurchaseToDB(payload);
     } 
     
@@ -176,7 +176,7 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
 
     const created = await PurchaseModel.create({
         userId,
-        platform: "apple_store",
+        platform: "app_store",
         productId: transaction.product_id,
         orderId: transaction.transaction_id,
         purchaseToken: originalTransId, 
