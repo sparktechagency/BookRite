@@ -11,8 +11,7 @@ import {
     acknowledgeInAppProduct,
 } from "../../../helpers/googlePlay";
 import { response } from "express";
-import { verifyAppleReceipt } from "../../../helpers/appleStoreHelper";
-
+import { verifyApplePurchaseV2 } from "../../../helpers/appleStoreHelper";
 // type VerifyInput = {
 //     userId: string;
 //     verificationData: {
@@ -32,7 +31,8 @@ export type VerifyInput = {
         packageName: string;
         productId: string;
         purchaseToken?: string; 
-        receiptData?: string;  
+        // receiptData?: string;  
+        transactionId?: string;
         autoRenewing?: boolean;
         acknowledged?: boolean;
     };
@@ -53,7 +53,7 @@ const createOrReturnExistingPurchase = async (purchaseToken: string) => {
     return await PurchaseModel.findOne({ purchaseToken });
 };
 
-    
+
 const verifyPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
     const { platform } = payload;
 
@@ -61,6 +61,7 @@ const verifyPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> =
         return await verifyIosPurchaseToDB(payload);
     } 
     
+    // Default to Android
     return await verifyAndroidPurchaseToDB(payload);
 };
 
@@ -145,51 +146,67 @@ const verifyAndroidPurchaseToDB = async (payload: VerifyInput): Promise<IPurchas
 const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
     const {
         userId,
-        verificationData: { productId, receiptData },
+        verificationData: { transactionId }, // ⚠️ We need transactionId, NOT receiptData
     } = payload;
 
-    if (!receiptData) throw new Error("Receipt data is required for iOS");
+    if (!transactionId) {
+        throw new Error("Transaction ID is required for iOS StoreKit 2 verification");
+    }
 
-    // 1. Verify with Apple
-    const transaction = await verifyAppleReceipt(receiptData);
+    const transaction = await verifyApplePurchaseV2(transactionId);
 
-    const originalTransId = transaction.original_transaction_id;
-    
+    const originalTransId = transaction.originalTransactionId;
+
     const existing = await createOrReturnExistingPurchase(originalTransId);
     if (existing) return existing;
 
-    // 3. Determine Status
-    const expiresDateMs = transaction.expires_date_ms ? Number(transaction.expires_date_ms) : null;
-    const now = Date.now();
-    let status: PurchaseStatus = "PENDING";
+    const expiresDateMs = transaction.expiresDate; 
+    const revocationDateMs = transaction.revocationDate; 
 
-    if (expiresDateMs && expiresDateMs > now) status = "ACTIVE";
-    else if (expiresDateMs && expiresDateMs <= now) status = "EXPIRED";
-    
-    // Apple sends cancellation_date_ms if the transaction was refunded/revoked
-    if (transaction.cancellation_date_ms) status = "CANCELED";
-    
-   
-    if (!expiresDateMs && !transaction.cancellation_date_ms) status = "ACTIVE";
+    let status: PurchaseStatus = "PENDING";
+    const now = Date.now();
+
+    if (expiresDateMs && expiresDateMs > now) {
+        status = "ACTIVE";
+    } else if (expiresDateMs && expiresDateMs <= now) {
+        status = "EXPIRED";
+    }
+
+    if (revocationDateMs) {
+        status = "CANCELED";
+    }
+
+    if (!expiresDateMs && !revocationDateMs) {
+        status = "ACTIVE";
+    }
 
     const expiryTime = expiresDateMs ? new Date(expiresDateMs) : undefined;
 
     const created = await PurchaseModel.create({
         userId,
         platform: "app_store",
-        productId: transaction.product_id,
-        orderId: transaction.transaction_id,
-        purchaseToken: originalTransId, 
-        acknowledged: true,
-        autoRenewing: !!expiresDateMs, 
+        productId: transaction.productId,
+        orderId: transaction.transactionId, 
+        purchaseToken: originalTransId,     
+        acknowledged: true,               
+        autoRenewing: transaction.type === "Auto-Renewable Subscription",
         purchaseState: 0, 
         expiryTime,
-        raw: transaction,
+        raw: transaction, 
         status,
     });
 
-
-    await updateUserStatus(userId, status, expiryTime);
+    if (status === "ACTIVE") {
+        await UserModel.findByIdAndUpdate(userId, { 
+            proActive: true, 
+            proExpiresAt: expiryTime || null 
+        }, { new: true });
+    } else {
+         await UserModel.findByIdAndUpdate(userId, { 
+            proActive: false, 
+            proExpiresAt: null 
+        }, { new: true });
+    }
 
     return created;
 };
