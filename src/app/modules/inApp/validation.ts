@@ -4,6 +4,7 @@ export const AndroidVerificationDataSchema = z.object({
     orderId: z.string(),
     packageName: z.string(),
     productId: z.string(),
+    transactionId: z.string().optional(),
     purchaseTime: z.number().optional(),
     purchaseState: z.number().optional(),
     purchaseToken: z.string(),
