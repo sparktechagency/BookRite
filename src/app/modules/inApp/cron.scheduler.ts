@@ -64,7 +64,6 @@ async function refreshOnePurchase(p: IPurchase) {
     }
 
     if (sub) {
-        // Acknowledge if needed
         if (!isAck(sub.acknowledgementState)) {
             try {
                 await acknowledgeSubscription(productId, purchaseToken);
@@ -135,24 +134,19 @@ async function refreshOnePurchase(p: IPurchase) {
 export function startInAppCron() {
     cron.schedule("*/6 * * * *", async () => {
         console.log("[cron] in-app refresh started");
-        // pick candidates that likely need refresh
         const now = new Date();
 
-        // statuses to check
         const toCheckStatuses: PurchaseStatus[] = ["ACTIVE", "PENDING"];
 
-        // Also include autoRenewing true or very recent updates
         const candidates = await PurchaseModel.find({
-            platform: "google_play",
+            platform: "google_play | apple_store",
             status: { $in: toCheckStatuses },
-            // optional: or { expiryTime: { $gte: now } }
         })
             .select("_id userId productId purchaseToken status expiryTime autoRenewing")
             .lean<IPurchase[]>();
 
         if (!candidates.length) return;
 
-        // Process sequentially or in small batches to respect quotas
         for (const p of candidates) {
             try {
                 await refreshOnePurchase(p);

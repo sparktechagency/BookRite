@@ -19,3 +19,4 @@ export const sendNotifications = async (data: any): Promise<INotification> => {
 
     return result;
 }
+
