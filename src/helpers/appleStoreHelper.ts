@@ -59,10 +59,26 @@ export async function verifyApplePurchaseV2(transactionId: string, isSandbox = f
         return decoded;
 
     } catch (error: any) {
-        if (error.response?.status === 404 && !isSandbox) {
-            console.log("⚠️ Switching to Sandbox...");
-            return verifyApplePurchaseV2(transactionId, true);
+        // ১. যদি রেসপন্স থাকে (যেমন 401, 404, 500)
+        if (error.response) {
+            console.error("🔥 Apple API Error Status:", error.response.status);
+            console.error("🔥 Apple API Error Data:", JSON.stringify(error.response.data, null, 2));
+
+            // যদি 401 Unauthorized দেয়, তার মানে আপনার Key/Issuer ID ভুল বা Token জেনারেশনে সমস্যা
+            if (error.response.status === 401) {
+                 console.error("❌ Possible Cause: Invalid Private Key, Key ID, or Issuer ID.");
+            }
+
+            // স্যান্ডবক্স রি-ট্রাই লজিক (আগেই ছিল)
+            if (error.response.status === 404 && !isSandbox) {
+                console.log("⚠️ Transaction not found in Prod, retrying in Sandbox...");
+                return verifyApplePurchaseV2(transactionId, true);
+            }
+        } else {
+            // ২. যদি নেটওয়ার্ক বা কোড এরর হয়
+            console.error("❌ Network or Code Error:", error.message);
         }
+
         throw new Error(error.response?.data?.errorMessage || "Apple verification failed");
     }
 }
