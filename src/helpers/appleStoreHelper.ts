@@ -42,15 +42,22 @@ function generateAppleToken() {
     });
 }
 
+// appleStoreV2Helper.ts
+
 export async function verifyApplePurchaseV2(transactionId: string, isSandbox = false) {
     const token = generateAppleToken();
     const baseUrl = isSandbox ? SANDBOX_URL : PROD_URL;
     const url = `${baseUrl}/${transactionId}`;
 
+    console.log(`🚀 Sending request to Apple (${isSandbox ? 'Sandbox' : 'Prod'})...`);
+    console.log(`🔗 URL: ${url}`);
+
     try {
         const response = await axios.get(url, {
             headers: { Authorization: `Bearer ${token}` }
         });
+
+        console.log("✅ Apple Response Status:", response.status); // 200 means success
 
         const { signedTransactionInfo } = response.data;
         const decoded = jwt.decode(signedTransactionInfo) as any;
@@ -59,26 +66,27 @@ export async function verifyApplePurchaseV2(transactionId: string, isSandbox = f
         return decoded;
 
     } catch (error: any) {
-        // ১. যদি রেসপন্স থাকে (যেমন 401, 404, 500)
+        // 🔥🔥 বিস্তারিত এরর লগিং 🔥🔥
         if (error.response) {
-            console.error("🔥 Apple API Error Status:", error.response.status);
-            console.error("🔥 Apple API Error Data:", JSON.stringify(error.response.data, null, 2));
+            console.error("❌ Apple API Error Status:", error.response.status);
+            console.error("❌ Apple API Error Body:", JSON.stringify(error.response.data, null, 2));
 
-            // যদি 401 Unauthorized দেয়, তার মানে আপনার Key/Issuer ID ভুল বা Token জেনারেশনে সমস্যা
+            // ১. যদি 401 Unauthorized দেয়
             if (error.response.status === 401) {
-                 console.error("❌ Possible Cause: Invalid Private Key, Key ID, or Issuer ID.");
+                console.error("👉 কারণ: আপনার Private Key, Issuer ID অথবা Key ID ভুল। Token জেনারেট ঠিকমতো হয়নি।");
             }
-
-            // স্যান্ডবক্স রি-ট্রাই লজিক (আগেই ছিল)
+            
+            // ২. যদি 404 Not Found দেয় (Sandbox Retry Logic)
             if (error.response.status === 404 && !isSandbox) {
                 console.log("⚠️ Transaction not found in Prod, retrying in Sandbox...");
                 return verifyApplePurchaseV2(transactionId, true);
             }
         } else {
-            // ২. যদি নেটওয়ার্ক বা কোড এরর হয়
-            console.error("❌ Network or Code Error:", error.message);
+            console.error("❌ Network/Code Error:", error.message);
         }
 
-        throw new Error(error.response?.data?.errorMessage || "Apple verification failed");
+        // অরিজিনাল এরর মেসেজটি থ্রো করুন যাতে পোস্টম্যান বা ফ্লাটারে দেখা যায়
+        const errorMsg = error.response?.data?.errorMessage || "Apple verification failed";
+        throw new Error(errorMsg);
     }
 }
