@@ -38,7 +38,6 @@ export type PurchaseFilters = {
 
 const isAcknowledged = (state?: number | null) => state === 1;
 
-
 const createOrReturnExistingPurchase = async (purchaseToken: string) => {
     return await PurchaseModel.findOne({ purchaseToken });
 };
