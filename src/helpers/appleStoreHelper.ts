@@ -1,23 +1,43 @@
 import axios from "axios";
 import jwt from "jsonwebtoken";
-
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+dotenv.config();
 const APPLE_KEY_ID = process.env.APPLE_KEY_ID!;
 const APPLE_ISSUER_ID = process.env.APPLE_ISSUER_ID!;
 const APPLE_BUNDLE_ID = process.env.IOS_BUNDLE_ID!;
 
-// 🔥 সঠিক ফরম্যাটিং ফাংশন
 const getApplePrivateKey = () => {
-    const rawKey = process.env.APPLE_PRIVATE_KEY || "";
-    
-    // ১. ডাবল কোটেশন রিমুভ এবং \n কে আসল নিউলাইনে কনভার্ট করা
-    // এটি খুবই গুরুত্বপূর্ণ কারণ .env থেকে \n টেক্সট হিসেবে আসে
-    return rawKey.replace(/\\n/g, '\n');
+    const keyPath = path.join(__dirname, '../../AuthKey_N246NQZA36.p8');
+
+    if (!fs.existsSync(keyPath)) {
+        throw new Error(`Private key file not found: ${keyPath}`);
+    }
+
+    const keyContent = fs.readFileSync(keyPath, 'utf8').trim();
+
+    // Basic validation
+    if (!keyContent.includes('-----BEGIN PRIVATE KEY-----') ||
+        !keyContent.includes('-----END PRIVATE KEY-----')) {
+        throw new Error('Private key file has invalid format (missing BEGIN/END markers)');
+    }
+
+    console.log('✅ Loaded private key from file');
+    console.log('   Path:', keyPath);
+    console.log('   Length:', keyContent.length);
+    console.log('   First line:', keyContent.split('\n')[0]);
+    console.log('   Last line :', keyContent.split('\n').slice(-1)[0]);
+
+    return keyContent;
 };
 
 const APPLE_PRIVATE_KEY = getApplePrivateKey();
 
-// ডিবাগিং (রান করার পর এটা মুছে দেবেন)
-// যদি দেখেন 'true' আসছে, তাহলে বুঝবেন কাজ হয়েছে
+// Optional: strong validation before using
+if (APPLE_PRIVATE_KEY.length < 200) {
+    throw new Error('Private key is too short - probably corrupted file');
+}
 console.log("✅ Apple Key Format Valid check:", APPLE_PRIVATE_KEY.includes("\n")); 
 
 const PROD_URL = "https://api.storekit.itunes.apple.com/inApps/v1/transactions";
@@ -42,7 +62,6 @@ function generateAppleToken() {
     });
 }
 
-// appleStoreV2Helper.ts
 
 export async function verifyApplePurchaseV2(transactionId: string, isSandbox = false) {
     const token = generateAppleToken();
@@ -57,7 +76,7 @@ export async function verifyApplePurchaseV2(transactionId: string, isSandbox = f
             headers: { Authorization: `Bearer ${token}` }
         });
 
-        console.log("✅ Apple Response Status:", response.status); // 200 means success
+        console.log("✅ Apple Response Status:", response.status); 
 
         const { signedTransactionInfo } = response.data;
         const decoded = jwt.decode(signedTransactionInfo) as any;
@@ -66,26 +85,22 @@ export async function verifyApplePurchaseV2(transactionId: string, isSandbox = f
         return decoded;
 
     } catch (error: any) {
-        // 🔥🔥 বিস্তারিত এরর লগিং 🔥🔥
         if (error.response) {
-            console.error("❌ Apple API Error Status:", error.response.status);
-            console.error("❌ Apple API Error Body:", JSON.stringify(error.response.data, null, 2));
+            console.error("Apple API Error Status:", error.response.status);
+            console.error("Apple API Error Body:", JSON.stringify(error.response.data, null, 2));
 
-            // ১. যদি 401 Unauthorized দেয়
             if (error.response.status === 401) {
-                console.error("👉 কারণ: আপনার Private Key, Issuer ID অথবা Key ID ভুল। Token জেনারেট ঠিকমতো হয়নি।");
+                console.error("Apple Invalid Token. Check your key, key ID, and issuer ID.");
             }
             
-            // ২. যদি 404 Not Found দেয় (Sandbox Retry Logic)
             if (error.response.status === 404 && !isSandbox) {
-                console.log("⚠️ Transaction not found in Prod, retrying in Sandbox...");
+                console.log("Apple Transaction not found in Prod, retrying in Sandbox...");
                 return verifyApplePurchaseV2(transactionId, true);
             }
         } else {
-            console.error("❌ Network/Code Error:", error.message);
+            console.error("Apple Network/Code Error:", error.message);
         }
 
-        // অরিজিনাল এরর মেসেজটি থ্রো করুন যাতে পোস্টম্যান বা ফ্লাটারে দেখা যায়
         const errorMsg = error.response?.data?.errorMessage || "Apple verification failed";
         throw new Error(errorMsg);
     }

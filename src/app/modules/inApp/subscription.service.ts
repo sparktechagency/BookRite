@@ -12,17 +12,7 @@ import {
 } from "../../../helpers/googlePlay";
 import { response } from "express";
 import { verifyApplePurchaseV2 } from "../../../helpers/appleStoreHelper";
-// type VerifyInput = {
-//     userId: string;
-//     verificationData: {
-//         orderId: string;
-//         packageName: string;
-//         productId: string;
-//         purchaseToken: string;
-//         autoRenewing?: boolean;
-//         acknowledged?: boolean;
-//     };
-// };
+
 export type VerifyInput = {
     userId: string;
     platform: "google_play" | "app_store"; 

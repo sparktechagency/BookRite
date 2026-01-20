@@ -74,9 +74,9 @@ async function main() {
 main();
 startInAppCron();
 // SIGTERM
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM IS RECEIVED');
-  if (server) {
-    server.close();
-  }
-});
+// process.on('SIGTERM', () => {
+//   logger.info('SIGTERM IS RECEIVED');
+//   if (server) {
+//     server.close();
+//   }
+// });

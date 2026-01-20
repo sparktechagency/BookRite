@@ -4,14 +4,20 @@ import { USER_ROLES } from "../../../enums/user";
 import { inAppPurchaseController } from "./subscription.controller";
 const router = express.Router();
 
-router.get("/",
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
-    inAppPurchaseController.getAllPurchases
-);
+
 
 router.post("/verify",
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
     inAppPurchaseController.verifyPurchase
+);
+// router.post("/verify/ios",
+//     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+//     inAppPurchaseController.verifyIOSPurchase
+// );
+
+router.get("/",
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    inAppPurchaseController.getAllPurchases
 );
 
 router.get("/user/:id",
