@@ -3,17 +3,17 @@ import { Message } from "../message/message.model";
 import { IChat } from "./chat.interface";
 import { Chat } from "./chat.model";
 
-const createChatToDB = async (participants: string[], name: string): Promise<IChat> => {
+const createChatToDB = async (payload: any, fullName: any): Promise<IChat> => {
     const isExistChat: IChat | null = await Chat.findOne({
-        participants: { $all: participants },
+        participants: { $all: payload },
     });
-
+    
     if (isExistChat) {
         return isExistChat;
     }
-    const chat: IChat = await Chat.create({ participants, name });
+    const chat: IChat = await Chat.create({ participants: payload });
     return chat;
-};
+}
 
 
 const getChatFromDB = async(user:any, search: string): Promise<IChat[]> =>{

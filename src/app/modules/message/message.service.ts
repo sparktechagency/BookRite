@@ -46,8 +46,6 @@ const sendMessageToDB = async (payload: any): Promise<IMessage> => {
 
 const getMessageFromDB = async (id: any, query: Record<string, any>): Promise<IMessage[]> => {
 
-
-
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid Chat Id")
     }
@@ -106,4 +104,8 @@ const responseOfferStatusToDB = async (id: any, status: string): Promise<IMessag
     return message;
 }
 
-export const MessageService = { sendMessageToDB, getMessageFromDB, responseOfferStatusToDB };
+export const MessageService = { 
+    sendMessageToDB, 
+    getMessageFromDB,
+    responseOfferStatusToDB 
+};

@@ -215,7 +215,6 @@ const updateUserStatus = async (userId: string, status: string, expiryTime?: Dat
     }
 };
 
-
 //   const  verifyAndroidPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
 //         const {
 //             userId,
@@ -297,7 +296,6 @@ const updateUserStatus = async (userId: string, status: string, expiryTime?: Dat
 //         }
 //     }
 
-
    const listPurchasesFromDB = async (
         filters: PurchaseFilters,
         page = 1,
@@ -318,7 +316,7 @@ const updateUserStatus = async (userId: string, status: string, expiryTime?: Dat
             ];
         }
 
-        const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit; 
 
         const [items, total] = await Promise.all([
             PurchaseModel.find(query).sort(String(sort)).skip(skip).limit(limit).lean(),
