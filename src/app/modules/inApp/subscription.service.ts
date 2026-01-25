@@ -201,6 +201,17 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
 };
 
 
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * Update user status in the database.
+ * 
+ * @param {string} userId - The user id to update.
+ * @param {string} status - The status to update to. Can be "ACTIVE", "EXPIRED", or "CANCELED".
+ * @param {Date | null} expiryTime - The expiry time to update to. Null if not applicable.
+ * 
+ * @returns {Promise<void>} - A promise that resolves when the update is complete.
+ */
+/*******  8047eea1-000e-4dc0-9072-e404b5986b7f  *******/
 const updateUserStatus = async (userId: string, status: string, expiryTime?: Date | null) => {
     if (status === "ACTIVE") {
         await UserModel.findByIdAndUpdate(userId, { 

@@ -17,67 +17,6 @@ const app = express();
 // app.post('/api/v1/webhook', express.raw({ type: 'application/json' }), PaymentController.handleStripeWebhooks); 
 app.post('/api/v1/webhook/stripe', express.raw({ type: 'application/json' }), unifiedStripeWebhookHandler);
 // Add to your routes file
-app.get('/api/v1/purchase/test-apple-auth', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-        const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
-        const APPLE_ISSUER_ID = process.env.APPLE_ISSUER_ID;
-        const APPLE_BUNDLE_ID = process.env.IOS_BUNDLE_ID;
-        
-        console.log('🔍 Apple Configuration Check:');
-        console.log('   APPLE_KEY_ID:', APPLE_KEY_ID);
-        console.log('   APPLE_KEY_ID length:', APPLE_KEY_ID?.length);
-        console.log('   APPLE_ISSUER_ID:', APPLE_ISSUER_ID);
-        console.log('   APPLE_ISSUER_ID length:', APPLE_ISSUER_ID?.length);
-        console.log('   APPLE_BUNDLE_ID:', APPLE_BUNDLE_ID);
-        
-        // Generate a test token
-        const jwt = require('jsonwebtoken');
-        const fs = require('fs');
-        const path = require('path');
-        
-        const keyPath = path.join(__dirname, '../AuthKey_N246NQZA36.p8');
-        const privateKey = fs.readFileSync(keyPath, 'utf8').trim();
-        
-        const now = Math.floor(Date.now() / 1000);
-        const payload = {
-            iss: APPLE_ISSUER_ID,
-            iat: now,
-            exp: now + 3600,
-            aud: "appstoreconnect-v1",
-            bid: APPLE_BUNDLE_ID
-        };
-        
-        const token = jwt.sign(payload, privateKey, {
-            algorithm: "ES256",
-            header: {
-                alg: "ES256",
-                kid: APPLE_KEY_ID,
-                typ: "JWT"
-            }
-        });
-        
-        res.json({
-            success: true,
-            message: 'JWT generated successfully',
-            config: {
-                keyId: APPLE_KEY_ID,
-                keyIdLength: APPLE_KEY_ID?.length,
-                issuerId: APPLE_ISSUER_ID,
-                issuerIdLength: APPLE_ISSUER_ID?.length,
-                bundleId: APPLE_BUNDLE_ID,
-                tokenPreview: token.substring(0, 50) + '...',
-                tokenLength: token.length
-            }
-        });
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            error: error.message,
-            stack: error.stack
-        });
-        next(error);
-    }
-});
 app.use('/htmlResponse', express.static(path.join(__dirname, '..', 'htmlResponse')));
 app.use(express.json());
 app.use(Morgan.successHandler);
