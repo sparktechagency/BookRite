@@ -184,19 +184,22 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
         raw: transaction, 
         status,
     });
+    await updateUserStatus(userId, status, expiryTime);
 
     if (status === "ACTIVE") {
         await UserModel.findByIdAndUpdate(userId, { 
             proActive: true, 
+            isSubscribed: true,
             proExpiresAt: expiryTime || null 
         }, { new: true });
     } else {
          await UserModel.findByIdAndUpdate(userId, { 
             proActive: false, 
-            proExpiresAt: null 
+            proExpiresAt: null,
+            isSubscribed: false
         }, { new: true });
     }
-    await updateUserStatus(userId, status, expiryTime);
+    await updateUserStatus(userId, status, null);
     return created;
 };
 
@@ -205,7 +208,8 @@ const updateUserStatus = async (userId: string, status: string, expiryTime?: Dat
     if (status === "ACTIVE") {
         await UserModel.findByIdAndUpdate(userId, { 
             proActive: true, 
-            proExpiresAt: expiryTime || null 
+            proExpiresAt: expiryTime || null, 
+            isSubscribed: true
         }, { new: true });
     } else if (status === "EXPIRED" || status === "CANCELED") {
         await UserModel.findByIdAndUpdate(userId, { 
