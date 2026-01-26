@@ -218,8 +218,8 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
     const existing = await createOrReturnExistingPurchase(originalTransId);
     if (existing) return existing;
 
-    const expiresDateMs = transaction.expiresDate; 
-    const revocationDateMs = transaction.revocationDate; 
+    const expiresDateMs = transaction.expiresDate ? Number(transaction.expiresDate) : undefined;
+    const revocationDateMs = transaction.revocationDate ? Number(transaction.revocationDate) : undefined;
 
     let status: PurchaseStatus = "PENDING";
     const now = Date.now();
@@ -239,6 +239,8 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
     }
 
     const expiryTime = expiresDateMs ? new Date(expiresDateMs) : null;
+
+    await updateUserStatus(userId, status, expiryTime);
 
     const created = await PurchaseModel.create({
         userId,
