@@ -221,27 +221,28 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
     const expiresDateMs = transaction.expiresDate ? Number(transaction.expiresDate) : undefined;
     const revocationDateMs = transaction.revocationDate ? Number(transaction.revocationDate) : undefined;
 
-    let status: PurchaseStatus = "PENDING";
+    // 🔧 FIX: Proper status determination with clear logic
+    let status: PurchaseStatus;
     const now = Date.now();
 
-    if (expiresDateMs && expiresDateMs > now) {
-        status = "ACTIVE";
-    } else if (expiresDateMs && expiresDateMs <= now) {
-        status = "EXPIRED";
-    }
-
     if (revocationDateMs) {
+        // Refunded/canceled subscriptions
         status = "CANCELED";
-    }
-
-    if (!expiresDateMs && !revocationDateMs) {
+    } else if (expiresDateMs) {
+        // Subscriptions with expiry date
+        status = expiresDateMs > now ? "ACTIVE" : "EXPIRED";
+    } else {
+        // Non-consumable purchases or lifetime subscriptions
         status = "ACTIVE";
     }
 
     const expiryTime = expiresDateMs ? new Date(expiresDateMs) : null;
 
-    await updateUserStatus(userId, status, expiryTime);
+    console.log(`📊 Determined status: ${status} for user ${userId}`);
+    console.log(`   Expiry: ${expiryTime}`);
+    console.log(`   Revocation: ${revocationDateMs ? 'Yes' : 'No'}`);
 
+    // Create purchase record
     const created = await PurchaseModel.create({
         userId,
         platform: "app_store",
@@ -256,7 +257,10 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
         status,
     });
 
+    // 🔧 FIX: Only call updateUserStatus ONCE, after creation
     await updateUserStatus(userId, status, expiryTime);
+
+    console.log(`✅ User status updated: proActive=${status === "ACTIVE"}, isSubscribed=${status === "ACTIVE"}`);
 
     return created;
 };
@@ -277,18 +281,37 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
 // };
 
 const updateUserStatus = async (userId: string, status: string, expiryTime?: Date | null) => {
+    console.log(`🔄 Updating user ${userId} with status: ${status}`);
+    
     if (status === "ACTIVE") {
-        await UserModel.findByIdAndUpdate(userId, { 
-            proActive: true, 
-            proExpiresAt: expiryTime || null, 
-            isSubscribed: true
-        }, { new: true });
+        const updated = await UserModel.findByIdAndUpdate(
+            userId, 
+            { 
+                proActive: true, 
+                proExpiresAt: expiryTime || null, 
+                isSubscribed: true
+            }, 
+            { new: true }
+        );
+        console.log(`✅ User updated to ACTIVE:`, {
+            proActive: updated?.proActive,
+            isSubscribed: updated?.isSubscribed,
+            proExpiresAt: updated?.proExpiresAt
+        });
     } else if (status === "EXPIRED" || status === "CANCELED") {
-        await UserModel.findByIdAndUpdate(userId, { 
-            proActive: false, 
-            proExpiresAt: null,
-            isSubscribed: false 
-        }, { new: true });
+        const updated = await UserModel.findByIdAndUpdate(
+            userId, 
+            { 
+                proActive: false, 
+                proExpiresAt: null,
+                isSubscribed: false 
+            }, 
+            { new: true }
+        );
+        console.log(`✅ User updated to ${status}:`, {
+            proActive: updated?.proActive,
+            isSubscribed: updated?.isSubscribed
+        });
     }
 };
 
