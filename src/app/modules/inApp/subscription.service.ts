@@ -135,7 +135,7 @@ const verifyAndroidPurchaseToDB = async (payload: VerifyInput): Promise<IPurchas
 const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
     const {
         userId,
-        verificationData: { transactionId }, // ⚠️ We need transactionId, NOT receiptData
+        verificationData: { transactionId }, 
     } = payload;
 
     if (!transactionId) {
@@ -196,22 +196,11 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
             proExpiresAt: null 
         }, { new: true });
     }
-
+    await updateUserStatus(userId, status, expiryTime);
     return created;
 };
 
 
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * Update user status in the database.
- * 
- * @param {string} userId - The user id to update.
- * @param {string} status - The status to update to. Can be "ACTIVE", "EXPIRED", or "CANCELED".
- * @param {Date | null} expiryTime - The expiry time to update to. Null if not applicable.
- * 
- * @returns {Promise<void>} - A promise that resolves when the update is complete.
- */
-/*******  8047eea1-000e-4dc0-9072-e404b5986b7f  *******/
 const updateUserStatus = async (userId: string, status: string, expiryTime?: Date | null) => {
     if (status === "ACTIVE") {
         await UserModel.findByIdAndUpdate(userId, { 
@@ -225,87 +214,6 @@ const updateUserStatus = async (userId: string, status: string, expiryTime?: Dat
         }, { new: true });
     }
 };
-
-//   const  verifyAndroidPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
-//         const {
-//             userId,
-//             verificationData: { orderId, productId, purchaseToken, autoRenewing },
-//         } = payload;
-
-//         const existing = await createOrReturnExistingPurchase(purchaseToken);
-//         if (existing) return existing;
-
-//         const isSub = !!autoRenewing;
-
-//         if (isSub) {
-//             const sub = await verifySubscription(productId, purchaseToken);
-
-//             const acknowledged = isAcknowledged(sub.acknowledgementState);
-//             const autoRenew = !!sub.autoRenewing;
-//             const paymentState = typeof sub.paymentState === "number" ? sub.paymentState : undefined;
-//             const expiryTime = sub.expiryTimeMillis ? new Date(Number(sub.expiryTimeMillis)) : undefined;
-
-//             if (!acknowledged) {
-//                 await acknowledgeSubscription(productId, purchaseToken);
-//             }
-
-//             let status: PurchaseStatus = "PENDING";
-//             const now = new Date();
-//             if (expiryTime && expiryTime > now) status = "ACTIVE";
-//             else if (expiryTime && expiryTime <= now) status = "EXPIRED";
-//             if (typeof sub.cancelReason === "number") status = "CANCELED";
-//             if (paymentState === 2) status = "PENDING";
-
-//             const created = await PurchaseModel.create({
-//                 userId,
-//                 platform: "google_play",
-//                 productId,
-//                 orderId,
-//                 purchaseToken,
-//                 acknowledged: true,
-//                 autoRenewing: autoRenew,
-//                 purchaseState: paymentState,
-//                 expiryTime,
-//                 raw: sub,
-//                 status,
-//             });
-
-//             if (status === "ACTIVE" && expiryTime) {
-//                 await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: expiryTime }, { new: true });
-//             } else if (status === "EXPIRED" || status === "CANCELED") {
-//                 await UserModel.findByIdAndUpdate(userId, { proActive: false, proExpiresAt: null }, { new: true });
-//             }
-
-//             // ⬅️ THIS was missing
-//             return created;
-//         } else {
-//             // One-time product flow
-//             const prod = await verifyInAppProduct(productId, purchaseToken);
-//             const acknowledged = isAcknowledged(prod.acknowledgementState);
-//             if (!acknowledged) {
-//                 await acknowledgeInAppProduct(productId, purchaseToken);
-//             }
-
-//             const status: PurchaseStatus = prod.purchaseState === 0 ? "ACTIVE" : "PENDING";
-
-//             const created = await PurchaseModel.create({
-//                 userId,
-//                 platform: "google_play",
-//                 productId,
-//                 orderId,
-//                 purchaseToken,
-//                 acknowledged: true,
-//                 autoRenewing: false,
-//                 purchaseState: prod.purchaseState,
-//                 raw: prod,
-//                 status,
-//             });
-
-//             await UserModel.findByIdAndUpdate(userId, { proActive: true, proExpiresAt: null }, { new: true });
-
-//             return created;
-//         }
-//     }
 
    const listPurchasesFromDB = async (
         filters: PurchaseFilters,
