@@ -10,12 +10,8 @@ const APPLE_KEY_ID = process.env.APPLE_KEY_ID!;
 const APPLE_ISSUER_ID = process.env.APPLE_ISSUER_ID!;
 const APPLE_BUNDLE_ID = process.env.IOS_BUNDLE_ID!;
 
-// if (!APPLE_KEY_ID || !APPLE_ISSUER_ID || !APPLE_BUNDLE_ID) {
-//     throw new Error('Missing required Apple environment variables');
-// }
-
-
 const getApplePrivateKey = () => {
+
     const keyPath = path.join(__dirname, '../../AuthKey_N246NQZA36.p8');
     
     if (!fs.existsSync(keyPath)) {
@@ -29,7 +25,6 @@ const getApplePrivateKey = () => {
         throw new Error('Private key file has invalid format');
     }
     
-    // console.log('✅ Apple private key loaded successfully');
     
     return keyContent;
 };
@@ -50,7 +45,7 @@ function generateAppleToken() {
         bid: APPLE_BUNDLE_ID
     };
     
-    console.log('🔐 Generating JWT...');
+    console.log(' Generating JWT...');
     
     try {
         const token = jwt.sign(payload, APPLE_PRIVATE_KEY, {
@@ -62,17 +57,16 @@ function generateAppleToken() {
             }
         });
         
-        // console.log('✅ JWT generated successfully');
         
         return token;
     } catch (error: any) {
-        console.error('❌ JWT generation failed:', error.message);
+        console.error(' JWT generation failed:', error.message);
         throw new Error(`Failed to generate Apple JWT: ${error.message}`);
     }
 }
 
 export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?: boolean) {
-    console.log(`\n🍎 Starting Apple verification for transaction: ${transactionId}`);
+    console.log(`\n Starting Apple verification for transaction: ${transactionId}`);
     
     // Determine environment
     let isSandbox = false;
@@ -81,8 +75,6 @@ export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?
         isSandbox = forceSandbox;
         console.log(`   Environment: ${isSandbox ? 'Sandbox (forced)' : 'Production (forced)'}`);
     } else {
-        // Auto-detect: Sandbox transactions start with '2' (testing)
-        // Production transactions start with '1' or higher
         const firstChar = transactionId.charAt(0);
         isSandbox = firstChar === '2';
         console.log(`   Transaction ID: ${transactionId}`);
@@ -95,7 +87,6 @@ export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?
     const url = `${baseUrl}/${transactionId}`;
     
     console.log(`🔗 Request URL: ${url}`);
-    
     try {
         const response = await axios.get(url, {
             headers: { 
@@ -105,7 +96,7 @@ export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?
             timeout: 10000
         });
         
-        console.log(`✅ Apple API Response: ${response.status}`);
+        console.log(` Apple API Response: ${response.status}`);
         
         const { signedTransactionInfo } = response.data;
         
@@ -117,14 +108,7 @@ export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?
         
         if (!decoded) {
             throw new Error("Failed to decode Apple transaction info");
-        }
-        
-        // console.log("✅ Transaction decoded successfully:");
-        // console.log("   Product ID:", decoded.productId);
-        // console.log("   Original Transaction ID:", decoded.originalTransactionId);
-        // console.log("   Type:", decoded.type);
-        // console.log("   Environment:", decoded.environment);
-        // console.log("   Expires Date:", decoded.expiresDate ? new Date(decoded.expiresDate) : 'N/A');
+        }       
         
         return decoded;
         
@@ -137,7 +121,7 @@ export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?
             console.error('   Response:', typeof data === 'string' ? data : JSON.stringify(data, null, 2));
             
             if (status === 401) {
-                console.error('\n🔍 Authentication Failed - Current Config:');
+                console.error('\n Authentication Failed - Current Config:');
                 console.error('   APPLE_KEY_ID:', APPLE_KEY_ID);
                 console.error('   APPLE_ISSUER_ID:', APPLE_ISSUER_ID);
                 console.error('   IOS_BUNDLE_ID:', APPLE_BUNDLE_ID);
@@ -146,11 +130,10 @@ export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?
             
             // If not found in production, try sandbox
             if (status === 404 && !isSandbox) {
-                console.log("\n⚠️ Transaction not found in Production, retrying in Sandbox...");
+                console.log("\nTransaction not found in Production, retrying in Sandbox...");
                 return verifyApplePurchaseV2(transactionId, true);
             }
             
-            // If not found in sandbox either
             if (status === 404 && isSandbox) {
                 throw new Error(`Transaction ${transactionId} not found in Sandbox environment`);
             }
@@ -159,10 +142,10 @@ export async function verifyApplePurchaseV2(transactionId: string, forceSandbox?
             throw new Error(`Apple API error (${status}): ${errorMsg}`);
             
         } else if (error.request) {
-            console.error("❌ No response from Apple API");
+            console.error(" No response from Apple API");
             throw new Error('No response from Apple - check network connection');
         } else {
-            console.error("❌ Request setup error:", error.message);
+            console.error(" Request setup error:", error.message);
             throw new Error(`Apple verification failed: ${error.message}`);
         }
     }

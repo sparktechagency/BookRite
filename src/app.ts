@@ -9,6 +9,7 @@ import { handleStripeWebhooks, PaymentController } from './app/modules/payment/p
 import handleStripeWebhook, { unifiedStripeWebhookHandler } from './app/modules/webhook/handleStripeWebhook';
 import auth from './app/middlewares/auth';
 import { User } from './app/modules/user/user.model';
+import { logger } from './shared/logger';
 const app = express();
 // app.get('/', (req, res) => {
 //   res.send('Server is running');
@@ -22,7 +23,28 @@ app.use(express.json());
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
 //body parser
-app.use(cors());
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'https://admin.flxbookonline.com'
+      ];
+      
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        logger.warn(`Blocked by CORS: ${origin}`);
+        callback(null, false);
+      }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
+  })
+);
 app.use(express.urlencoded({ extended: true }));
 
 //file retrieve

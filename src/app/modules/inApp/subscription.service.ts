@@ -131,77 +131,8 @@ const verifyAndroidPurchaseToDB = async (payload: VerifyInput): Promise<IPurchas
     }
 };
 
-// 3. iOS LOGIC (New)
-// const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
-//     const {
-//         userId,
-//         verificationData: { transactionId }, 
-//     } = payload;
 
-//     if (!transactionId) {
-//         throw new Error("Transaction ID is required for iOS StoreKit 2 verification");
-//     }
 
-//     const transaction = await verifyApplePurchaseV2(transactionId);
-
-//     const originalTransId = transaction.originalTransactionId;
-
-//     const existing = await createOrReturnExistingPurchase(originalTransId);
-//     if (existing) return existing;
-
-//     const expiresDateMs = transaction.expiresDate; 
-//     const revocationDateMs = transaction.revocationDate; 
-
-//     let status: PurchaseStatus = "PENDING";
-//     const now = Date.now();
-
-//     if (expiresDateMs && expiresDateMs > now) {
-//         status = "ACTIVE";
-//     } else if (expiresDateMs && expiresDateMs <= now) {
-//         status = "EXPIRED";
-//     }
-
-//     if (revocationDateMs) {
-//         status = "CANCELED";
-//     }
-
-//     if (!expiresDateMs && !revocationDateMs) {
-//         status = "ACTIVE";
-//     }
-
-//     const expiryTime = expiresDateMs ? new Date(expiresDateMs) : undefined;
-
-//     const created = await PurchaseModel.create({
-//         userId,
-//         platform: "app_store",
-//         productId: transaction.productId,
-//         orderId: transaction.transactionId, 
-//         purchaseToken: originalTransId,     
-//         acknowledged: true,               
-//         autoRenewing: transaction.type === "Auto-Renewable Subscription",
-//         purchaseState: 0, 
-//         expiryTime,
-//         raw: transaction, 
-//         status,
-//     });
-//     await updateUserStatus(userId, status, expiryTime);
-
-//     if (status === "ACTIVE") {
-//         await UserModel.findByIdAndUpdate(userId, { 
-//             proActive: true, 
-//             isSubscribed: true,
-//             proExpiresAt: expiryTime || null 
-//         }, { new: true });
-//     } else {
-//          await UserModel.findByIdAndUpdate(userId, { 
-//             proActive: false, 
-//             proExpiresAt: null,
-//             isSubscribed: false
-//         }, { new: true });
-//     }
-//     await updateUserStatus(userId, status, null);
-//     return created;
-// };
 const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc> => {
     const {
         userId,
@@ -221,18 +152,15 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
     const expiresDateMs = transaction.expiresDate ? Number(transaction.expiresDate) : undefined;
     const revocationDateMs = transaction.revocationDate ? Number(transaction.revocationDate) : undefined;
 
-    // 🔧 FIX: Proper status determination with clear logic
     let status: PurchaseStatus;
     const now = Date.now();
 
     if (revocationDateMs) {
-        // Refunded/canceled subscriptions
+
         status = "CANCELED";
     } else if (expiresDateMs) {
-        // Subscriptions with expiry date
         status = expiresDateMs > now ? "ACTIVE" : "EXPIRED";
     } else {
-        // Non-consumable purchases or lifetime subscriptions
         status = "ACTIVE";
     }
 
@@ -242,7 +170,6 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
     console.log(`   Expiry: ${expiryTime}`);
     console.log(`   Revocation: ${revocationDateMs ? 'Yes' : 'No'}`);
 
-    // Create purchase record
     const created = await PurchaseModel.create({
         userId,
         platform: "app_store",
@@ -257,7 +184,6 @@ const verifyIosPurchaseToDB = async (payload: VerifyInput): Promise<IPurchaseDoc
         status,
     });
 
-    // 🔧 FIX: Only call updateUserStatus ONCE, after creation
     await updateUserStatus(userId, status, expiryTime);
 
     console.log(`✅ User status updated: proActive=${status === "ACTIVE"}, isSubscribed=${status === "ACTIVE"}`);
